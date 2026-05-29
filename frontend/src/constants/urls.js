@@ -1,0 +1,17 @@
+export const register= '/api/auth/register';
+export const login= '/api/auth/login';
+export const refreshToken = '/api/auth/refresh-token';
+export const forgotPassword= '/api/auth/forgot-password';
+export const resetPassword= '/api/auth/reset-password';
+export const userProfile = '/api/auth/profile';
+export const projects = '/api/projects';
+export const teams = '/api/teams';
+export const assignableUsers = '/api/teams/assignable-users';
+export const updateproject = (id) => `/api/projects/${id}`;
+export const deleteproject = (id) => `/api/projects/${id}`;
+export const projectMembers = (id) => `/api/projects/${id}/members`;
+export const tasks = '/api/tasks';
+export const taskById = (id) => `/api/tasks/${id}`;
+export const taskStatus = (id) => `/api/tasks/${id}/status`;
+export const projectDevelopers = (projectId) => `/api/tasks/project/${projectId}/developers`;
+
