@@ -6,6 +6,10 @@ import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 import { sendMail } from "../utils/sendMail";
 import crypto from "crypto";
 import { hashToken, compareToken } from "../utils/token";
+import { OAuth2Client } from "google-auth-library";
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+console.log("GOOGLE_CLIENT_ID>>>>>>>>>>>>>>>>>>", process.env.GOOGLE_CLIENT_ID)
 
 const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET!;
 
@@ -91,8 +95,8 @@ export const UserForgotPasswordService = async (email: string) => {
   user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
   await userRepository.save(user);
 
-  // const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
-  const resetUrl = `${frontendResetUrl}/reset-password/${resetToken}`;
+  const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+  // const resetUrl = `${frontendResetUrl}/reset-password/${resetToken}`;
 
   await sendMail({
     to: user.email,
@@ -132,3 +136,37 @@ export const UserProfileService = async (userId: number) => {
   if (!user) throw new Error("User not found");
   return { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email, role: user.role };
 }
+
+export const UserGoogleLoginService = async (idToken: string) => {
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+  if (!payload || !payload.email) {
+    throw new Error("Invalid Google token");
+  }
+
+  let user = await userRepository.findOneBy({ email: payload.email });
+
+  if (!user) {
+    user = userRepository.create({
+      first_name: payload.given_name || "GoogleUser",
+      last_name: payload.family_name || "GoogleUser",
+      email: payload.email,
+      password: crypto.randomBytes(16).toString("hex"),
+      role: "developer",
+    });
+    await userRepository.save(user);
+  }
+
+  const accessToken = generateAccessToken(user.id, user.role);
+  const refreshToken = generateRefreshToken(user.id);
+
+  const hashedRefreshToken = await hashToken(refreshToken);
+  user.refreshTokenHash = hashedRefreshToken;
+  await userRepository.save(user);
+
+  return { accessToken, refreshToken, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email, role: user.role } };
+};

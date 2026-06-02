@@ -7,10 +7,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { loginValidation } from "./schema/loginValidation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginUserApi } from "../helpers/apiRequest";
+import { loginUserApi, userGoogleLoginApi } from "../helpers/apiRequest";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { GoogleLogin } from "@react-oauth/google";
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -20,6 +21,31 @@ const Login = () => {
     handleSubmit,
     formState: { errors },
   } = useForm({ resolver: zodResolver(loginValidation) });
+
+  const handleGoogleLoginSuccess = async (credentialResponse) => {
+    try {
+      const tokenId = credentialResponse?.credential;
+      if (!tokenId) {
+        throw new Error("Google credential not received");
+      }
+      const response = await userGoogleLoginApi(tokenId);
+
+      if (response.success === true) {
+        localStorage.setItem("token", response.accessToken);
+        setUser(response.user);
+        navigate("/dashboard");
+        toast.success(response.message || "Google login successful!");
+      }
+    } catch (error) {
+      const msg = error.response?.data?.message || error.message || "Google login failed";
+      console.error("Google Login error:", error);
+      toast.error(msg);
+    }
+  };
+
+  const handleGoogleLoginError = () => {
+    toast.error("Google sign-in failed. Please try again.");
+  };
 
   const onSubmit = async (data) => {
     console.log("Login button clicked");
@@ -84,9 +110,8 @@ const Login = () => {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
-                autoComplete="current-password"
-                {...register("password")}
                 autoComplete="new-password"
+                {...register("password")}
                 className="w-full h-12 px-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <span
@@ -139,14 +164,15 @@ const Login = () => {
               <span className="text-sm font-medium text-[#A0A0A0]">
                 Login with
               </span>
-              <div className="flex gap-4 my-3">
-                <div className="bg-[#F5F5F5] p-5 relative w-6 h-6">
-                  <GoogleSvg className="absolute inset-0 m-auto w-6 h-6 cursor-pointer" />
-                </div>
-                <div className="bg-[#F5F5F5] p-5 relative w-6 h-6">
-                  <MicrosoftSvg className="absolute inset-0 m-auto w-6 h-6 cursor-pointer" />
-                </div>
-              </div>
+              <div className=" gap-4 my-3 items-center">
+              <GoogleLogin
+                onSuccess={handleGoogleLoginSuccess}
+                onError={handleGoogleLoginError}
+              />
+              {/* <div className="bg-[#F5F5F5] p-5 relative w-6 h-6 rounded-full">
+                <MicrosoftSvg className="absolute inset-0 m-auto w-6 h-6" />
+              </div> */}
+            </div>
             </div>
 
             <p className="text-center text-gray-600 font-bold text-[13px] mt-6">

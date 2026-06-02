@@ -130,3 +130,14 @@ export const deleteTaskApi = async (taskId) => {
   const response = await api.delete(apiUrl.taskById(taskId));
   return response.data;
 }
+
+export const userGoogleLoginApi = async (tokenId) => {
+  try {
+    const response = await api.post(apiUrl.userGoogleLogin, { tokenId });
+    console.log('Google Login successful:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Google Login failed:>>>>>>>>>>>>', error);
+    throw error;
+  }
+}

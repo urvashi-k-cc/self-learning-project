@@ -5,7 +5,7 @@ import { refreshToken as refreshTokenUrl } from "../constants/urls";
 const api = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:5173",
+    "http://localhost:9000",
 
   timeout: 10000,
 
@@ -13,7 +13,7 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 
-  withCredentials: true, // IMPORTANT
+  withCredentials: true, // IMPORTANT when using refresh-token cookies
 });
 
 export default api;

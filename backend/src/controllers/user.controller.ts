@@ -5,7 +5,8 @@ import {
   UserRefreshTokenService,
   UserForgotPasswordService,
   UserResetPasswordService,
-  UserProfileService
+  UserProfileService,
+  UserGoogleLoginService
 } from "../services/user.service";
 import { AuthRequest } from "../types/express";
 
@@ -147,5 +148,27 @@ export const UserProfileController = async (req: AuthRequest, res: Response) => 
       success: false,
       message: err.message,
     });
+  }
+};
+
+export const userGoogleLoginController = async (req: Request, res: Response) => {
+  try {
+    const { tokenId } = req.body;
+    const tokens = await UserGoogleLoginService(tokenId);
+    res.cookie("refreshToken", tokens.refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+    res.json({
+      success: true,
+      message: "Logged in successfully",
+      accessToken: tokens.accessToken,
+      user: tokens.user
+
+    });
+  } catch (err: any) {
+    res.status(401).json({ message: err.message });
   }
 };

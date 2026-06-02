@@ -1,4 +1,4 @@
-import { UserController,UserLoginController, UserRefreshTokenController, UserForgotPasswordController, UserResetPasswordController, UserProfileController } from "../controllers/user.controller";
+import { UserController,UserLoginController, UserRefreshTokenController, UserForgotPasswordController, UserResetPasswordController, UserProfileController,userGoogleLoginController } from "../controllers/user.controller";
 import { Router } from "express";
 import { authenticate } from "../middlewares/authenticate";
 
@@ -15,4 +15,5 @@ router.get(
   authenticate,
   UserProfileController
 );
+router.post("/google-login", userGoogleLoginController)
 export default router
