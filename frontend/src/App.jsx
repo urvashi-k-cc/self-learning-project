@@ -22,6 +22,7 @@ export default function App() {
         position="top-right"
         richColors
         toastOptions={{ style: { zIndex: 9999 } }}
+        duration={2000}
       />
       <BrowserRouter>
         <Routes>

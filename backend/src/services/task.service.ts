@@ -33,7 +33,7 @@ interface UpdateTaskData {
 
 export const createTaskService = async (
   teamLeadId: number,
-  data: CreateTaskData
+  data: CreateTaskData,
 ) => {
   if (!data.title?.trim()) {
     throw new Error("Task title is required");
@@ -48,10 +48,12 @@ export const createTaskService = async (
 
   const team = await getProjectTeam(data.projectId);
   const assigneeOnTeam = team?.members.some(
-    (m) => m.userId === data.assignedToId && !m.isTeamLead
+    (m) => m.userId === data.assignedToId && !m.isTeamLead,
   );
   if (!assigneeOnTeam) {
-    throw new Error("Tasks can only be assigned to developers on the project team");
+    throw new Error(
+      "Tasks can only be assigned to developers on the project team",
+    );
   }
 
   const assignee = await userRepository.findOneBy({ id: data.assignedToId });
@@ -84,18 +86,20 @@ export const createTaskService = async (
 export const getTasksForUserService = async (
   userId: number,
   role: UserRole,
-  projectId?: number
+  projectId?: number,
 ) => {
   if (role === "teamLead") {
     const query = taskRepository
       .createQueryBuilder("task")
       .leftJoinAndSelect("task.assignedTo", "assignedTo")
       .leftJoinAndSelect("task.project", "project")
+      .leftJoinAndSelect("project.createdBy", "projectCreator")
       .innerJoin("project.teams", "team")
       .innerJoin("team.members", "leadMember", "leadMember.isTeamLead = true")
       .where("leadMember.userId = :userId", { userId })
       .andWhere("project.deletedAt IS NULL")
-      .orderBy("task.created_at", "DESC");
+      .orderBy("task.created_at", "DESC")
+      .leftJoinAndSelect("task.createdBy", "createdBy");
 
     if (projectId) {
       await assertCanViewProject(userId, role, projectId);
@@ -109,7 +113,9 @@ export const getTasksForUserService = async (
     const query = taskRepository
       .createQueryBuilder("task")
       .leftJoinAndSelect("task.assignedTo", "assignedTo")
+      .leftJoinAndSelect("task.createdBy", "createdBy")
       .leftJoinAndSelect("task.project", "project")
+      .leftJoinAndSelect("project.createdBy", "projectCreator")
       .where("task.assignedToId = :userId", { userId })
       .andWhere("project.deletedAt IS NULL")
       .orderBy("task.created_at", "DESC");
@@ -128,7 +134,7 @@ export const updateTaskService = async (
   taskId: number,
   userId: number,
   role: UserRole,
-  data: UpdateTaskData
+  data: UpdateTaskData,
 ) => {
   const task = await assertCanManageTask(userId, role, taskId);
 
@@ -153,11 +159,11 @@ export const updateTaskService = async (
   if (data.assignedToId !== undefined) {
     const team = await getProjectTeam(task.projectId);
     const assigneeOnTeam = team?.members.some(
-      (m) => m.userId === data.assignedToId && !m.isTeamLead
+      (m) => m.userId === data.assignedToId && !m.isTeamLead,
     );
     if (!assigneeOnTeam) {
       throw new Error(
-        "Tasks can only be assigned to developers on the project team"
+        "Tasks can only be assigned to developers on the project team",
       );
     }
 
@@ -182,7 +188,7 @@ export const updateTaskStatusService = async (
   taskId: number,
   userId: number,
   role: UserRole,
-  status: TaskStatus
+  status: TaskStatus,
 ) => {
   if (!TASK_STATUSES.includes(status)) {
     throw new Error("Invalid task status");
@@ -201,7 +207,7 @@ export const updateTaskStatusService = async (
 export const getProjectDevelopersService = async (
   projectId: number,
   userId: number,
-  role: UserRole
+  role: UserRole,
 ) => {
   await assertCanViewProject(userId, role, projectId);
 
@@ -213,4 +219,9 @@ export const getProjectDevelopersService = async (
   return team.members
     .filter((m) => !m.isTeamLead && m.user.role === "developer")
     .map((m) => m.user);
+};
+
+export const deleteTaskService = async (taskId: number, userId: number, role: UserRole) => {
+  await assertCanManageTask(userId, role, taskId);
+  await taskRepository.delete({ id: taskId });
 };

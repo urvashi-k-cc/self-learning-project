@@ -6,6 +6,7 @@ import {
   updateTaskService,
   updateTaskStatusService,
   getProjectDevelopersService,
+  deleteTaskService,
 } from "../services/task.service";
 
 export const createTaskController = async (
@@ -128,3 +129,25 @@ export const getProjectDevelopersController = async (
     });
   }
 };
+
+export const deleteTaskController = async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId, role } = req.user!;
+    const taskId = parseInt(String(req.params.id), 10);
+    await deleteTaskService(taskId, userId, role);
+
+    return res.status(200).json({
+      success: true,
+      message: "Task deleted successfully",
+    });
+  } catch (err: any) {
+    const status =
+      err.message.includes("access") || err.message.includes("permission")
+        ? 403
+        : 400;
+    return res.status(status).json({
+      success: false,
+      message: err.message,
+    });
+  } 
+}

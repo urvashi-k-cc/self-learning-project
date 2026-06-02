@@ -41,7 +41,7 @@ const validateMemberUsers = async (
   if (users.length !== memberIds.length) {
     throw new Error("One or more selected users were not found");
   }
-
+  
   const managerUser = users.find((u) => u.role === "manager");
   if (managerUser) {
     throw new Error("Managers cannot be added as team members");
@@ -64,7 +64,6 @@ const validateMemberUsers = async (
 
   return users;
 };
-
 const saveTeamMembers = async (
   transactionalManager: typeof AppDataSource.manager,
   teamId: number,
@@ -242,11 +241,6 @@ export const updateProjectMembersService = async (
     const alreadyAssigned = addedUsers.find(
       (u) => u.teamId !== null && u.teamId !== team.id
     );
-    if (alreadyAssigned) {
-      throw new Error(
-        `${alreadyAssigned.first_name} ${alreadyAssigned.last_name} is already assigned to another team`
-      );
-    }
   }
 
   return AppDataSource.transaction(async (manager) => {

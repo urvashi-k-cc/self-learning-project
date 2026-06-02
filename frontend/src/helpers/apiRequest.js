@@ -21,9 +21,7 @@ export const loginUserApi=async(userData)=>{
     console.error('Login failed:>>>>>>>>>>>>', error);
     throw error;
   }
-
 }
-
 export const forgetPasswordApi = async (email) => {
   try {
     const response = await api.post(apiUrl.forgotPassword, { email });
@@ -61,7 +59,6 @@ export const createProjectApi = async (projectData) => {
   const response = await api.post(apiUrl.projects, projectData);
   return response.data;
 };
-
 export const getProjectsApi = async () => {
   const response = await api.get(apiUrl.projects);
   return response.data;
@@ -128,3 +125,8 @@ export const getProjectDevelopersApi = async (projectId) => {
   const response = await api.get(apiUrl.projectDevelopers(projectId));
   return response.data;
 };
+
+export const deleteTaskApi = async (taskId) => {
+  const response = await api.delete(apiUrl.taskById(taskId));
+  return response.data;
+}

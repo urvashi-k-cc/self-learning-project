@@ -10,7 +10,6 @@ const roleLabels = {
 const Dashboard = () => {
   const { user } = useAuth();
   const role = user?.role;
-
   return (
     <div className="p-6 max-w-3xl">
       <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
@@ -18,7 +17,6 @@ const Dashboard = () => {
         Signed in as {user?.first_name} {user?.last_name} (
         {roleLabels[role] || role})
       </p>
-
       {role === "manager" && (
         <div className="space-y-2">
           <p className="font-medium">You can:</p>

@@ -14,7 +14,7 @@ export class User {
   @Column()
   first_name!: string;
 
-  @Column()
+  @Column() 
   last_name!: string;
 
   @Column()
@@ -22,7 +22,6 @@ export class User {
 
   @Column()
   password!: string;
-
   @Column({
     type: "enum",
     enum: ["developer", "teamLead", "manager"],
@@ -30,7 +29,6 @@ export class User {
   })
   role!: "developer" | "teamLead" | "manager";
 
-  // OPTIONAL FOR FUTURE
   @Column({ type: "int", nullable: true })
   teamId!: number | null;
 

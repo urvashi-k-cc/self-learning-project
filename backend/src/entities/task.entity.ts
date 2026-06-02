@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  DeleteDateColumn,
 } from "typeorm";
 import { User } from "./user.entity";
 import { Project } from "./project.entity";
@@ -55,4 +56,7 @@ export class Task {
 
   @UpdateDateColumn()
   updated_at!: Date;
+
+  @DeleteDateColumn()
+  deletedAt!: Date | null;
 }

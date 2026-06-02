@@ -12,24 +12,25 @@ import {
 import {
   getTasksApi,
   createTaskApi,
+  updateTaskApi,
   updateTaskStatusApi,
   getProjectDevelopersApi,
   getProjectsApi,
+  deleteTaskApi,
 } from "../helpers/apiRequest";
 import { useAuth } from "../context/AuthContext";
-
 const STATUSES = ["todo", "in_progress", "review", "done"];
 
 const TaskList = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const initialProjectId = searchParams.get("projectId") || "";
-
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [developers, setDevelopers] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(initialProjectId);
   const [showForm, setShowForm] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -37,7 +38,6 @@ const TaskList = () => {
     status: "todo",
   });
   const [loading, setLoading] = useState(true);
-
   const isTeamLead = user?.role === "teamLead";
   const isDeveloper = user?.role === "developer";
 
@@ -80,39 +80,98 @@ const TaskList = () => {
         await loadTasks(projectId);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to load project data");
+      toast.error(
+        error.response?.data?.message || "Failed to load project data",
+      );
     }
   };
-
-  const handleCreateTask = async (e) => {
+  const handleSubmitTask = async (e) => {
     e.preventDefault();
+
     try {
-      const res = await createTaskApi({
-        title: form.title,
-        description: form.description,
-        projectId: Number(selectedProjectId),
-        assignedToId: Number(form.assignedToId),
-        status: form.status,
+      let res;
+
+      if (editingTask) {
+        res = await updateTaskApi(editingTask.id, {
+          title: form.title,
+          description: form.description,
+          assignedToId: Number(form.assignedToId),
+          status: form.status,
+        });
+      } else {
+        res = await createTaskApi({
+          title: form.title,
+          description: form.description,
+          projectId: Number(selectedProjectId),
+          assignedToId: Number(form.assignedToId),
+          status: form.status,
+        });
+      }
+
+      toast.success(
+        res.message ||
+          (editingTask
+            ? "Task updated successfully"
+            : "Task assigned successfully"),
+      );
+
+      setForm({
+        title: "",
+        description: "",
+        assignedToId: "",
+        status: "todo",
       });
-      toast.success(res.message || "Task assigned");
+
+      setEditingTask(null);
       setShowForm(false);
-      setForm({ title: "", description: "", assignedToId: "", status: "todo" });
+
       await loadTasks(selectedProjectId);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to assign task");
+      toast.error(
+        error.response?.data?.message ||
+          (editingTask ? "Failed to update task" : "Failed to create task"),
+      );
+    }
+  };
+  const handleStatusChange = async (taskId, status) => {
+    try {
+      const response = await updateTaskStatusApi(taskId, status);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status } : t)),
+      );
+      console.log("API response >>>>>>>>>", response);
+      toast.dismiss(); // clear existing toasts
+      toast.success(
+        response?.message ||
+          response?.data?.message ||
+          "Task status updated successfully",
+      );
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to update status");
     }
   };
 
-  const handleStatusChange = async (taskId, status) => {
+  const handleDelete = async (taskId) => {
     try {
-      await updateTaskStatusApi(taskId, status);
-      setTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, status } : t))
-      );
-      toast.success("Status updated");
+      await deleteTaskApi(taskId);
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      toast.success("Task deleted successfully");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update status");
+      toast.error(error?.response?.data?.message || "Failed to delete task");
     }
+  };
+
+  const handleEdit = (task) => {
+    setEditingTask(task);
+
+    setForm({
+      title: task.title,
+      description: task.description || "",
+      assignedToId: String(task.assignedTo?.id || ""),
+      status: task.status,
+    });
+
+    setShowForm(true);
   };
 
   if (loading) {
@@ -131,8 +190,21 @@ const TaskList = () => {
         </h1>
         {isTeamLead && selectedProjectId && (
           <button
-            onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-gray-800 text-white rounded-md cursor-pointer"
+            onClick={() => {
+              if (showForm) {
+                setEditingTask(null);
+
+                setForm({
+                  title: "",
+                  description: "",
+                  assignedToId: "",
+                  status: "todo",
+                });
+              }
+
+              setShowForm(!showForm);
+            }}
+            className="px-4 py-2 bg-gray-800 text-white rounded-md"
           >
             {showForm ? "Cancel" : "Assign Task"}
           </button>
@@ -161,9 +233,12 @@ const TaskList = () => {
 
       {showForm && isTeamLead && (
         <form
-          onSubmit={handleCreateTask}
+          onSubmit={handleSubmitTask}
           className="mb-6 p-4 border border-gray-200 rounded-lg space-y-3"
         >
+          <h2 className="text-lg font-semibold">
+            {editingTask ? "Edit Task" : "Assign New Task"}
+          </h2>
           <input
             type="text"
             placeholder="Task title"
@@ -176,17 +251,13 @@ const TaskList = () => {
             placeholder="Description (optional)"
             className="w-full px-3 py-2 border rounded-md"
             value={form.description}
-            onChange={(e) =>
-              setForm({ ...form, description: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
           <select
             required
             className="w-full h-10 px-3 border rounded-md"
             value={form.assignedToId}
-            onChange={(e) =>
-              setForm({ ...form, assignedToId: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, assignedToId: e.target.value })}
           >
             <option value="">Assign to developer</option>
             {developers.map((d) => (
@@ -197,20 +268,40 @@ const TaskList = () => {
           </select>
           <button
             type="submit"
-            className="px-4 py-2 bg-gray-900 text-white rounded-md"
+            className="px-4 py-2 bg-gray-900 text-white rounded-md cursor-pointer"
           >
-            Assign
+            {editingTask ? "Update Task" : "Assign Task"}
           </button>
+          <button
+            type="button"
+            className="px-4 py-2 bg-gray-900 text-white rounded-md ms-2 cursor-pointer"
+            onClick={() => {
+              setEditingTask(null);
+              setForm({
+                title: "",
+                description: "",
+                assignedToId: "",
+                status: "todo",
+              });
+              setShowForm(false);
+            }}
+          >
+            Cancel
+          </button> 
         </form>
       )}
 
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="text-center">#</TableHead>
             <TableHead>Title</TableHead>
             {isTeamLead && <TableHead>Assignee</TableHead>}
             <TableHead>Project</TableHead>
+            <TableHead> Assigned Team Lead</TableHead>
+            <TableHead>Project Manager</TableHead>
             <TableHead>Status</TableHead>
+            {isTeamLead && <TableHead>Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -224,8 +315,9 @@ const TaskList = () => {
               </TableCell>
             </TableRow>
           ) : (
-            tasks.map((task) => (
+            tasks.map((task, index) => (
               <TableRow key={task.id}>
+                <TableCell className="text-center ms-2">{index + 1}</TableCell>
                 <TableCell>{task.title}</TableCell>
                 {isTeamLead && (
                   <TableCell>
@@ -233,6 +325,12 @@ const TaskList = () => {
                   </TableCell>
                 )}
                 <TableCell>{task.project?.name || "—"}</TableCell>
+                <TableCell>
+                  {`${task.createdBy.first_name} ${task.createdBy.last_name}`}
+                </TableCell>{" "}
+                <TableCell>
+                  {`${task.project?.createdBy.first_name} ${task.project?.createdBy.last_name}`}
+                </TableCell>
                 <TableCell>
                   <select
                     className="border rounded px-2 py-1 text-sm"
@@ -247,6 +345,28 @@ const TaskList = () => {
                       </option>
                     ))}
                   </select>
+                </TableCell>
+                <TableCell className="flex items-center">
+                  {isTeamLead && (
+                    <button
+                      type="button"
+                      className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer"
+                      onClick={() => handleEdit(task)}
+                    >
+                      Edit
+                    </button>
+                  )}
+                  <div className="h-1 flex" />
+                  {isTeamLead && (
+                    <button
+                      className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer ms-2"
+                      onClick={() =>
+                        handleDelete(task.id)
+                      }
+                    >
+                      Delete                          
+                    </button>
+                  )}
                 </TableCell>
               </TableRow>
             ))

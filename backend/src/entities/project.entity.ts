@@ -19,7 +19,6 @@ export class Project {
   @Column({ unique: true })
   name!: string;
 
-
   @Column({ type: "text", nullable: true })
   description!: string | null;
 

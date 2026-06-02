@@ -41,7 +41,6 @@ export const UserLoginService = async (email: string, password: string) => {
   if (!isMatch) throw new Error("Invalid credentials");
   console.log("frontendResetUrl", frontendResetUrl)
 
-
   const accessToken = generateAccessToken(user.id,user.role);
   const refreshToken = generateRefreshToken(user.id);
 
@@ -70,7 +69,6 @@ export const UserRefreshTokenService = async (refreshToken: string) => {
   }
 
   const isValid = await compareToken(refreshToken, user.refreshTokenHash);
-
   if (!isValid) {
     throw new Error("Invalid refresh token");
   }
@@ -83,12 +81,10 @@ export const UserRefreshTokenService = async (refreshToken: string) => {
 
   return { accessToken, refreshToken: newRefreshToken };
 };
-
 /* FORGOT PASSWORD*/
 export const UserForgotPasswordService = async (email: string) => {
   const user = await userRepository.findOneBy({ email });
   if (!user) return { message: "If your email is registered, reset link will be sent." };
-
   const resetToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
   user.resetPasswordToken = hashedToken;

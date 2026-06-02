@@ -17,12 +17,14 @@ const CreateProject = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
+
   const projectFromState = location.state?.project;
   const projectId = params.id || projectFromState?.id;
   const isEdit = Boolean(projectId);
 
   const [users, setUsers] = useState([]);
   const [selectedMembers, setSelectedMembers] = useState({});
+  const [teamLeadId, setTeamLeadId] = useState(null);
   const [loadingUsers, setLoadingUsers] = useState(!isEdit);
 
   const defaultValues = {
@@ -36,7 +38,10 @@ const CreateProject = () => {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(projectValidation), defaultValues });
+  } = useForm({
+    resolver: zodResolver(projectValidation),
+    defaultValues,
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,6 +52,7 @@ const CreateProject = () => {
         if (isEdit && projectId) {
           const projectRes = await getProjectByIdApi(projectId);
           const project = projectRes.project;
+
           reset({
             name: project.name,
             description: project.description || "",
@@ -54,14 +60,20 @@ const CreateProject = () => {
           });
 
           const members = {};
+          let existingLead = null;
+
           project.teams?.forEach((team) => {
             team.members?.forEach((m) => {
               members[m.userId] = { isTeamLead: m.isTeamLead };
+
+              if (m.isTeamLead) {
+                existingLead = m.userId;
+              }
             });
           });
+
           setSelectedMembers(members);
-        } else if (isEdit && projectFromState) {
-          reset(defaultValues);
+          setTeamLeadId(existingLead);
         }
       } catch (error) {
         toast.error(
@@ -71,91 +83,67 @@ const CreateProject = () => {
         setLoadingUsers(false);
       }
     };
+
     loadData();
   }, [isEdit, projectId, reset]);
+
+  const formatRole = (role) => {
+    const roleMap = {
+      teamLead: "Team Lead",
+      manager: "Manager",
+      developer: "Developer",
+    };
+    return roleMap[role] || role;
+  };
 
   const toggleMember = (userId) => {
     setSelectedMembers((prev) => {
       const next = { ...prev };
+
       if (next[userId]) {
         delete next[userId];
+
+        if (teamLeadId === userId) {
+          setTeamLeadId(null);
+        }
       } else {
         next[userId] = { isTeamLead: false };
       }
-      return next;
-    });
-  };
 
-  const setTeamLead = (userId) => {
-    setSelectedMembers((prev) => {
-      const next = {};
-      Object.keys(prev).forEach((id) => {
-        next[id] = { isTeamLead: Number(id) === userId };
-      });
-      if (!next[userId]) {
-        next[userId] = { isTeamLead: true };
-      }
       return next;
     });
   };
 
   const onSubmit = async (data) => {
     try {
-      let response;
+      const members = Object.entries(selectedMembers).map(([userId]) => ({
+        userId: Number(userId),
+        isTeamLead: Number(userId) === teamLeadId,
+      }));
+
+      if (members.length === 0) {
+        toast.error("Add at least one team member");
+        return;
+      }
+
+      if (!teamLeadId) {
+        toast.error("Please select a Team Lead");
+        return;
+      }
+
       if (isEdit) {
-        response = await updateProjectApi({ ...data, id: projectId });
-
-        const members = Object.entries(selectedMembers).map(
-          ([userId, value]) => ({
-            userId: Number(userId),
-            isTeamLead: value.isTeamLead,
-          })
-        );
-
-        if (members.length > 0) {
-          if (!members.some((m) => m.isTeamLead)) {
-            toast.error("Every project must have exactly one Team Lead");
-            return;
-          }
-          if (members.filter((m) => m.isTeamLead).length > 1) {
-            toast.error("Only one Team Lead is allowed per project");
-            return;
-          }
-          await updateProjectMembersApi(projectId, members);
-        }
+        await updateProjectApi({ ...data, id: projectId });
+        await updateProjectMembersApi(projectId, members);
       } else {
-        const members = Object.entries(selectedMembers).map(
-          ([userId, value]) => ({
-            userId: Number(userId),
-            isTeamLead: value.isTeamLead,
-          })
-        );
-
-        if (members.length === 0) {
-          toast.error("Add at least one team member");
-          return;
-        }
-
-        if (!members.some((m) => m.isTeamLead)) {
-          toast.error("Every project must have exactly one Team Lead");
-          return;
-        }
-
-        if (members.filter((m) => m.isTeamLead).length > 1) {
-          toast.error("Only one Team Lead is allowed per project");
-          return;
-        }
-
-        response = await createProjectApi({
+        await createProjectApi({
           name: data.name,
           description: data.description,
           teamName: data.teamName,
           members,
         });
       }
-      toast.success(
-        response.message || (isEdit ? "Project updated" : "Project created")
-      );
+
+      toast.success(isEdit ? "Project updated" : "Project created");
       navigate("/projects");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to save project");
@@ -169,12 +157,15 @@ const CreateProject = () => {
       </div>
     );
   }
+
   return (
-    <div className="max-w-5xl mx-auto p-6 rounded-lg shadow border border-gray-300 mt-4">
+    <div className="max-w-5xl mx-auto p-6 rounded-lg shadow border border-gray-200 mt-4">
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-6 ml-4">
         <h1 className="text-2xl font-bold text-black">
           {isEdit ? "Edit Project" : "Create Project"}
         </h1>
+
         <button
           onClick={() => navigate("/projects")}
           className="px-4 py-2 bg-gray-800 text-white rounded-md flex items-center cursor-pointer"
@@ -183,122 +174,127 @@ const CreateProject = () => {
           <span className="ml-2">Back</span>
         </button>
       </div>
+
+      {/* FORM */}
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-4 bg-white p-6 rounded-lg shadow"
+        className="space-y-4 bg-white p-6 rounded-lg"
       >
+        {/* NAME */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Project name
-            <span className="text-red-600 ml-1 font-normal">*</span>
+          <label className="block text-sm font-bold mb-2">
+            Project name *
           </label>
           <input
-            type="text"
-            className="w-full h-11 px-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-11 px-4 border rounded-md"
             {...register("name")}
           />
           {errors.name && (
-            <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
+            <p className="text-red-500 text-xs">{errors.name.message}</p>
           )}
         </div>
 
+        {/* DESCRIPTION */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Description (optional)
+          <label className="block text-sm font-bold mb-2">
+            Description
           </label>
           <textarea
             rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border rounded-md"
             {...register("description")}
           />
         </div>
 
+        {/* TEAM NAME */}
         {!isEdit && (
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Team name (optional)
+            <label className="block text-sm font-bold mb-2">
+              Team name
             </label>
             <input
-              type="text"
-              placeholder="Defaults to project name + Team"
-              className="w-full h-11 px-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-11 px-4 border rounded-md"
               {...register("teamName")}
             />
           </div>
         )}
 
+        {/* MEMBERS */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-sm font-bold mb-2">
             Team members
-            {!isEdit && (
-              <span className="text-red-600 ml-1 font-normal">
-                * (exactly one Team Lead required)
-              </span>
-            )}
           </label>
-          <div className="border border-gray-200 rounded-md divide-y max-h-72 overflow-y-auto">
-            {users.length === 0 ? (
-              <p className="p-4 text-sm text-gray-500">
-                No developers or team leads available to assign.
-              </p>
-            ) : (
-              users.map((user) => {
-                const isSelected = Boolean(selectedMembers[user.id]);
-                const isOnThisProject = isSelected;
-                // const isAssignedElsewhere =
-                //   user.teamId !== null && !isOnThisProject && user.role !== "teamLead" ;
-                const isLead = selectedMembers[user.id]?.isTeamLead;
+          <div className="border rounded-md divide-y max-h-72 overflow-y-auto">
+            {users.map((user) => {
+              const isSelected = Boolean(selectedMembers[user.id]);
 
-                return (
-                  <div
-                    key={user.id}
-                    className={`flex items-center justify-between p-3 
-                   `
-                  }
-                  >
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        // disabled={isAssignedElsewhere}
-                        checked={isSelected}
-                        onChange={() => toggleMember(user.id)}
-                      />
-                      <span className="text-sm">
-                        {user.first_name} {user.last_name} ({user.role})
-                        {/* {isAssignedElsewhere && "  already on another team"} */}
-                      </span>
-                    </label>
+              return (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-3"
+                >
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleMember(user.id)}
+                    />
 
-                    {isSelected && user.role === "teamLead" && (
-                      <label className="flex items-center gap-2 text-sm text-blue-600">
-                        <input
-                          type="radio"
-                          name="teamLead"
-                          checked={isLead}
-                          onChange={() => setTeamLead(user.id)}
-                        />
-                        Team Lead
-                      </label>
-                    )}
-                  </div>
-                );
-              })
-            )}
+                    <span className="text-sm">
+                      {user.first_name} {user.last_name} (
+                      {formatRole(user.role)})
+                    </span>
+                  </label>
+                </div>
+              );
+            })}
           </div>
         </div>
 
+        {/* TEAM LEAD DROPDOWN (NEW UX) */}
+        {Object.keys(selectedMembers).length > 0 && (
+          <div>
+            <label className="block text-sm font-bold mb-2">
+              Select Team Lead *
+            </label>
+
+            <select
+              className="w-full h-11 px-3 border rounded-md"
+              value={teamLeadId || ""}
+              onChange={(e) => setTeamLeadId(Number(e.target.value))}
+            >
+              <option value="">Select Team Lead</option>
+
+              {users
+                .filter((u) => selectedMembers[u.id])
+                .map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.first_name} {user.last_name} (
+                    {formatRole(user.role)})
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
+
+        {/* ACTIONS */}
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-4 py-2 bg-gray-900 text-white font-bold rounded-md hover:bg-gray-800 disabled:opacity-50 cursor-pointer"
+            className="px-4 py-2 bg-gray-900 text-white rounded-md"
           >
-            {isSubmitting ? "Submitting..." : isEdit ? "Update" : "Submit"}
+            {isSubmitting
+              ? "Submitting..."
+              : isEdit
+              ? "Update"
+              : "Submit"}
           </button>
+
           <button
             type="button"
             onClick={() => navigate("/projects")}
-            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
+            className="px-4 py-2 border rounded-md"
           >
             Cancel
           </button>

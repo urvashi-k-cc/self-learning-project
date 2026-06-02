@@ -7,6 +7,7 @@ import {
   updateTaskController,
   updateTaskStatusController,
   getProjectDevelopersController,
+  deleteTaskController,
 } from "../controllers/task.controller";
 
 const router = Router();
@@ -26,5 +27,6 @@ router.patch(
   authorizeRoles("teamLead", "developer"),
   updateTaskStatusController
 );
+router.delete("/:id", authorizeRoles("teamLead"), deleteTaskController);
 
 export default router;
