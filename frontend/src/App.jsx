@@ -14,6 +14,7 @@ import ProjectList from "./components/ProjectList";
 import TeamsList from "./components/TeamList";
 import TaskList from "./components/TaskList";
 import RoleRoute from "./components/RoleRoute";
+import NotFound from "./components/NotFound";
 
 export default function App() {
   return (
@@ -48,14 +49,14 @@ export default function App() {
                 </RoleRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/teams"
               element={
                 <ManagerRoute>
                   <TeamsList />
                 </ManagerRoute>
               }
-            />
+            /> */}
             <Route
               path="/tasks"
               element={
@@ -83,7 +84,7 @@ export default function App() {
           </Route>
 
           {/* Invalid Routes */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </>

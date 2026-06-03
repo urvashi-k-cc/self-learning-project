@@ -148,14 +148,14 @@ const Login = () => {
               </div>
               <Link
                 to="/forgot-password"
-                className="text-sm font-bold text-blue-500 hover:underline"
+                className="text-sm font-bold text-gray-800 hover:underline"
               >
                 Forgot Password?
               </Link>
             </div>
             <button
               type="submit"
-              className="w-full py-2 px-4 h-10 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-600 transition duration-300 cursor-pointer"
+              className="w-full py-2 px-4 h-10 bg-gray-900 text-white font-bold rounded-md hover:bg-gray-800 transition duration-300 cursor-pointer"
             >
               Sign In
             </button>
@@ -177,7 +177,7 @@ const Login = () => {
 
             <p className="text-center text-gray-600 font-bold text-[13px] mt-6">
               Don't have an account?{" "}
-              <a href="/register" className="text-blue-500 hover:underline">
+              <a href="/register" className="text-gray-900 hover:underline">
                 Sign Up
               </a>
             </p>

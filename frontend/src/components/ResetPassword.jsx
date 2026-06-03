@@ -79,7 +79,7 @@ const ResetPassword = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Password */}
             <div>
-              <label className="text-sm font-semibold">New Password</label>
+              <label className="text-sm font-semibold text-gray-700">New Password</label>
 
               <div className="relative mt-1">
                 <input
@@ -110,7 +110,7 @@ const ResetPassword = () => {
 
             {/* Confirm Password */}
             <div>
-              <label className="text-sm font-semibold">Confirm Password</label>
+              <label className="text-sm font-semibold text-gray-700">Confirm Password</label>
 
               <div className="relative mt-1">
                 <input
@@ -151,7 +151,7 @@ const ResetPassword = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-500 text-white py-2 rounded-md font-semibold hover:bg-blue-600 disabled:opacity-50 cursor-pointer"
+                className="w-full bg-gray-800 text-white py-2 rounded-md font-semibold hover:bg-gray-700 disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Resetting..." : "Reset Password"}
               </button>

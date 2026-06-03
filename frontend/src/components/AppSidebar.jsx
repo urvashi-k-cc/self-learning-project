@@ -41,7 +41,6 @@ const allLinks = [
     roles: ["teamLead", "developer"],
   },
 ];
-
 export function AppSidebar() {
   const location = useLocation();
   const { user } = useAuth();

@@ -120,7 +120,6 @@ export const createProjectService = async (
       createdById: managerId,
     });
     await teamRepo.save(team);
-
     await saveTeamMembers(manager, team.id, data.members);
 
     return projectRepo.findOne({

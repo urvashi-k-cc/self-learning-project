@@ -224,31 +224,33 @@ const CreateProject = () => {
           <label className="block text-sm font-bold mb-2">
             Team members
           </label>
-          <div className="border rounded-md divide-y max-h-72 overflow-y-auto">
-            {users.map((user) => {
-              const isSelected = Boolean(selectedMembers[user.id]);
+       <div className="border rounded-md divide-y max-h-72 overflow-y-auto">
+  {users
+    .filter((user) => user.role === "developer")
+    .map((user) => {
+      const isSelected = Boolean(selectedMembers[user.id]);
 
-              return (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-3"
-                >
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleMember(user.id)}
-                    />
+      return (
+        <div
+          key={user.id}
+          className="flex items-center justify-between p-3"
+        >
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => toggleMember(user.id)}
+            />
 
-                    <span className="text-sm">
-                      {user.first_name} {user.last_name} (
-                      {formatRole(user.role)})
-                    </span>
-                  </label>
-                </div>
-              );
-            })}
-          </div>
+            <span className="text-sm">
+              {user.first_name} {user.last_name} (
+              {formatRole(user.role)})
+            </span>
+          </label>
+        </div>
+      );
+    })}
+</div>
         </div>
 
         {/* TEAM LEAD DROPDOWN (NEW UX) */}
@@ -266,7 +268,8 @@ const CreateProject = () => {
               <option value="">Select Team Lead</option>
 
               {users
-                .filter((u) => selectedMembers[u.id])
+                .filter(    (u) => selectedMembers[u.id] && u.role === "teamLead"
+)
                 .map((user) => (
                   <option key={user.id} value={user.id}>
                     {user.first_name} {user.last_name} (

@@ -32,7 +32,6 @@ export const forgetPasswordApi = async (email) => {
     throw error;
   }
 };
-
 export const resetPasswordApi = async ({ token, password }) => {
   try {
     const response = await api.post(apiUrl.resetPassword, { token, password });
@@ -121,9 +120,10 @@ export const updateTaskStatusApi = async (taskId, status) => {
   return response.data;
 };
 
+
 export const getProjectDevelopersApi = async (projectId) => {
   const response = await api.get(apiUrl.projectDevelopers(projectId));
-  return response.data;
+  return response.data; 
 };
 
 export const deleteTaskApi = async (taskId) => {

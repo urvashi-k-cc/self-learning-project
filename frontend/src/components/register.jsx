@@ -47,7 +47,7 @@ const Register = () => {
           >
             {/* First Name */}
             <label
-              className="block text-[#7C858E] text-sm font-bold mb-2"
+              className="block text-gray-700 text-sm font-bold mb-2"
               htmlFor="firstName"
             >
               First Name
@@ -154,14 +154,13 @@ const Register = () => {
 
             <button
               type="submit"
-              className="w-full py-2 px-4 h-10 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-600 transition duration-300 cursor-pointer"
+              className="w-full py-2 px-4 h-10 bg-gray-800 text-white font-bold rounded-md hover:bg-gray-700 transition duration-300 cursor-pointer"
             >
               Sign Up
             </button>
-
             <p className="text-center text-gray-600 font-bold text-[13px] mt-4 ">
               Already have an account?{" "}
-              <a href="/login" className="text-blue-500 hover:underline">
+              <a href="/login" className="text-gray-800 hover:underline">
                 Sign In
               </a>
             </p>

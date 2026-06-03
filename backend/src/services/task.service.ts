@@ -71,7 +71,7 @@ export const createTaskService = async (
     description: data.description?.trim() || null,
     projectId: data.projectId,
     assignedToId: data.assignedToId,
-    createdById: teamLeadId,
+    createdById: teamLeadId,  
     status,
   });
 

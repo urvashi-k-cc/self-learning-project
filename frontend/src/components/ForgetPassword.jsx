@@ -84,7 +84,7 @@ const ForgetPassword = () => {
               <button
                 type="button"
                 onClick={() => navigate("/login")}
-                className="flex-1 h-10 bg-gray-500 text-white font-bold rounded-md hover:bg-gray-600 transition duration-300 text-sm cursor-pointer"
+                className="flex-1 h-10 bg-gray-500 text-white font-bold rounded-md hover:bg-gray-500 transition duration-300 text-sm cursor-pointer"
               >
                 Back to Login
               </button>
@@ -92,7 +92,7 @@ const ForgetPassword = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 h-10 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-600 transition duration-300 text-sm disabled:opacity-50 cursor-pointer"
+                className="flex-1 h-10 bg-gray-800 text-white font-bold rounded-md hover:bg-gray-700 transition duration-300 text-sm disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Sending..." : "Submit"}
               </button>

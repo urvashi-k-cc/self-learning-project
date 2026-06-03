@@ -87,7 +87,6 @@ const TaskList = () => {
   };
   const handleSubmitTask = async (e) => {
     e.preventDefault();
-
     try {
       let res;
 

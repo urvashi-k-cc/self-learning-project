@@ -8,7 +8,6 @@ import {
   softDeleteProjectService,
   updateProjectMembersService,
 } from "../services/project.service";
-
 export const createProjectController = async (
   req: AuthRequest,
   res: Response
@@ -23,6 +22,7 @@ export const createProjectController = async (
       project,
     });
   } catch (err: any) {
+    console.error("Error creating project:", err);
     return res.status(400).json({
       success: false,
       message: err.message,
@@ -89,6 +89,7 @@ export const deleteProjectController = async (
       message: "Project deleted successfully",
     });
   } catch (err: any) {
+    console.error(err);
     return res.status(400).json({
       success: false,
       message: err.message,
@@ -110,6 +111,7 @@ export const updateProjectController = async (
       project: updatedProject,
     });
   } catch (err: any) {
+    console.error(err);
     return res.status(400).json({
       success: false,
       message: err.message,
