@@ -32,36 +32,70 @@ interface UpdateTaskData {
 }
 
 export const createTaskService = async (
-  teamLeadId: number,
+  userId: number,
   data: CreateTaskData,
 ) => {
   if (!data.title?.trim()) {
     throw new Error("Task title is required");
   }
 
-  await getActiveProjectOrThrow(data.projectId);
-
-  const isLead = await isUserTeamLeadOnProject(teamLeadId, data.projectId);
-  if (!isLead) {
-    throw new Error("You can only assign tasks on projects you lead");
+  if (!data.projectId) {
+    throw new Error("Project is required");
   }
 
-  const team = await getProjectTeam(data.projectId);
-  const assigneeOnTeam = team?.members.some(
-    (m) => m.userId === data.assignedToId && !m.isTeamLead,
-  );
-  if (!assigneeOnTeam) {
-    throw new Error(
-      "Tasks can only be assigned to developers on the project team",
+  await getActiveProjectOrThrow(data.projectId);
+
+  const user = await userRepository.findOneBy({
+    id: userId,
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  let canAssign = false;
+
+  if (user.role === "manager") {
+    canAssign = true;
+  } else if (user.role === "teamLead") {
+    canAssign = await isUserTeamLeadOnProject(
+      userId,
+      data.projectId
     );
   }
 
-  const assignee = await userRepository.findOneBy({ id: data.assignedToId });
+  if (!canAssign) {
+    throw new Error(
+      "Only managers or project team leads can assign tasks"
+    );
+  }
+
+  const team = await getProjectTeam(data.projectId);
+
+  const assigneeOnTeam = team?.members.some(
+    (m) =>
+      m.userId === data.assignedToId &&
+      !m.isTeamLead
+  );
+
+  if (!assigneeOnTeam) {
+    throw new Error(
+      "Tasks can only be assigned to developers on the project team"
+    );
+  }
+
+  const assignee = await userRepository.findOneBy({
+    id: data.assignedToId,
+  });
+
   if (!assignee || assignee.role !== "developer") {
-    throw new Error("Tasks must be assigned to a developer");
+    throw new Error(
+      "Tasks must be assigned to a developer"
+    );
   }
 
   const status = data.status || "todo";
+
   if (!TASK_STATUSES.includes(status)) {
     throw new Error("Invalid task status");
   }
@@ -71,15 +105,18 @@ export const createTaskService = async (
     description: data.description?.trim() || null,
     projectId: data.projectId,
     assignedToId: data.assignedToId,
-    createdById: teamLeadId,  
+    createdById: userId,
     status,
   });
 
   await taskRepository.save(task);
 
-  return taskRepository.findOne({
+  return await taskRepository.findOne({
     where: { id: task.id },
-    relations: { assignedTo: true, project: true },
+    relations: {
+      assignedTo: true,
+      project: true,
+    },
   });
 };
 
@@ -161,11 +198,11 @@ export const updateTaskService = async (
     const assigneeOnTeam = team?.members.some(
       (m) => m.userId === data.assignedToId && !m.isTeamLead,
     );
-    if (!assigneeOnTeam) {
-      throw new Error(
-        "Tasks can only be assigned to developers on the project team",
-      );
-    }
+    // if (!assigneeOnTeam) {
+    //   throw new Error(
+    //     "Tasks can only be assigned to developers on the project team",
+    //   );
+    // }
 
     const assignee = await userRepository.findOneBy({
       id: data.assignedToId,
@@ -221,7 +258,11 @@ export const getProjectDevelopersService = async (
     .map((m) => m.user);
 };
 
-export const deleteTaskService = async (taskId: number, userId: number, role: UserRole) => {
+export const deleteTaskService = async (
+  taskId: number,
+  userId: number,
+  role: UserRole,
+) => {
   await assertCanManageTask(userId, role, taskId);
   await taskRepository.delete({ id: taskId });
 };

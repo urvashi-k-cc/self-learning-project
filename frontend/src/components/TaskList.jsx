@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Table,
@@ -11,14 +11,12 @@ import {
 } from "@/components/ui/table";
 import {
   getTasksApi,
-  createTaskApi,
-  updateTaskApi,
   updateTaskStatusApi,
-  getProjectDevelopersApi,
   getProjectsApi,
   deleteTaskApi,
 } from "../helpers/apiRequest";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 const STATUSES = ["todo", "in_progress", "review", "done"];
 
 const TaskList = () => {
@@ -27,19 +25,12 @@ const TaskList = () => {
   const initialProjectId = searchParams.get("projectId") || "";
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [developers, setDevelopers] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(initialProjectId);
-  const [showForm, setShowForm] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    assignedToId: "",
-    status: "todo",
-  });
   const [loading, setLoading] = useState(true);
   const isTeamLead = user?.role === "teamLead";
   const isDeveloper = user?.role === "developer";
+  const isManager = user?.role === "manager";
+  const navigate = useNavigate();
 
   const loadTasks = async (projectId) => {
     const res = await getTasksApi(projectId ? Number(projectId) : undefined);
@@ -55,8 +46,6 @@ const TaskList = () => {
           const pid = initialProjectId || projectsRes.projects?.[0]?.id;
           if (pid) {
             setSelectedProjectId(String(pid));
-            const devRes = await getProjectDevelopersApi(Number(pid));
-            setDevelopers(devRes.developers || []);
             await loadTasks(String(pid));
           }
         } else if (isDeveloper) {
@@ -75,8 +64,6 @@ const TaskList = () => {
     setSelectedProjectId(projectId);
     try {
       if (projectId) {
-        const devRes = await getProjectDevelopersApi(Number(projectId));
-        setDevelopers(devRes.developers || []);
         await loadTasks(projectId);
       }
     } catch (error) {
@@ -85,53 +72,7 @@ const TaskList = () => {
       );
     }
   };
-  const handleSubmitTask = async (e) => {
-    e.preventDefault();
-    try {
-      let res;
 
-      if (editingTask) {
-        res = await updateTaskApi(editingTask.id, {
-          title: form.title,
-          description: form.description,
-          assignedToId: Number(form.assignedToId),
-          status: form.status,
-        });
-      } else {
-        res = await createTaskApi({
-          title: form.title,
-          description: form.description,
-          projectId: Number(selectedProjectId),
-          assignedToId: Number(form.assignedToId),
-          status: form.status,
-        });
-      }
-
-      toast.success(
-        res.message ||
-          (editingTask
-            ? "Task updated successfully"
-            : "Task assigned successfully"),
-      );
-
-      setForm({
-        title: "",
-        description: "",
-        assignedToId: "",
-        status: "todo",
-      });
-
-      setEditingTask(null);
-      setShowForm(false);
-
-      await loadTasks(selectedProjectId);
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          (editingTask ? "Failed to update task" : "Failed to create task"),
-      );
-    }
-  };
   const handleStatusChange = async (taskId, status) => {
     try {
       const response = await updateTaskStatusApi(taskId, status);
@@ -160,19 +101,6 @@ const TaskList = () => {
     }
   };
 
-  const handleEdit = (task) => {
-    setEditingTask(task);
-
-    setForm({
-      title: task.title,
-      description: task.description || "",
-      assignedToId: String(task.assignedTo?.id || ""),
-      status: task.status,
-    });
-
-    setShowForm(true);
-  };
-
   if (loading) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
@@ -187,27 +115,14 @@ const TaskList = () => {
         <h1 className="text-2xl font-bold">
           {isDeveloper ? "My Tasks" : "Project Tasks"}
         </h1>
-        {isTeamLead && selectedProjectId && (
+        {isTeamLead || isManager ? (
           <button
-            onClick={() => {
-              if (showForm) {
-                setEditingTask(null);
-
-                setForm({
-                  title: "",
-                  description: "",
-                  assignedToId: "",
-                  status: "todo",
-                });
-              }
-
-              setShowForm(!showForm);
-            }}
-            className="px-4 py-2 bg-gray-800 text-white rounded-md"
+            className="px-4 py-2 bg-gray-800 text-white rounded-md cursor-pointer"
+            onClick={() => navigate("/tasks/create")}
           >
-            {showForm ? "Cancel" : "Assign Task"}
+            Create Task
           </button>
-        )}
+        ) : null}
       </div>
 
       {isTeamLead && (
@@ -228,66 +143,6 @@ const TaskList = () => {
             ))}
           </select>
         </div>
-      )}
-
-      {showForm && isTeamLead && (
-        <form
-          onSubmit={handleSubmitTask}
-          className="mb-6 p-4 border border-gray-200 rounded-lg space-y-3"
-        >
-          <h2 className="text-lg font-semibold">
-            {editingTask ? "Edit Task" : "Assign New Task"}
-          </h2>
-          <input
-            type="text"
-            placeholder="Task title"
-            required
-            className="w-full h-10 px-3 border rounded-md"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-          />
-          <textarea
-            placeholder="Description (optional)"
-            className="w-full px-3 py-2 border rounded-md"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-          />
-          <select
-            required
-            className="w-full h-10 px-3 border rounded-md"
-            value={form.assignedToId}
-            onChange={(e) => setForm({ ...form, assignedToId: e.target.value })}
-          >
-            <option value="">Assign to developer</option>
-            {developers.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.first_name} {d.last_name}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-gray-900 text-white rounded-md cursor-pointer"
-          >
-            {editingTask ? "Update Task" : "Assign Task"}
-          </button>
-          <button
-            type="button"
-            className="px-4 py-2 bg-gray-900 text-white rounded-md ms-2 cursor-pointer"
-            onClick={() => {
-              setEditingTask(null);
-              setForm({
-                title: "",
-                description: "",
-                assignedToId: "",
-                status: "todo",
-              });
-              setShowForm(false);
-            }}
-          >
-            Cancel
-          </button> 
-        </form>
       )}
 
       <Table>
@@ -350,7 +205,7 @@ const TaskList = () => {
                     <button
                       type="button"
                       className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer"
-                      onClick={() => handleEdit(task)}
+                      onClick={() => navigate(`/tasks/edit/${task.id}`)}
                     >
                       Edit
                     </button>
@@ -359,11 +214,9 @@ const TaskList = () => {
                   {isTeamLead && (
                     <button
                       className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer ms-2"
-                      onClick={() =>
-                        handleDelete(task.id)
-                      }
+                      onClick={() => handleDelete(task.id)}
                     >
-                      Delete                          
+                      Delete
                     </button>
                   )}
                 </TableCell>

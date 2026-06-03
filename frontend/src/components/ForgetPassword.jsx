@@ -13,9 +13,7 @@ const forgotPasswordValidation = z.object({
 
 const ForgetPassword = () => {
   const navigate = useNavigate();
-
   const [loading, setLoading] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -44,7 +42,7 @@ const ForgetPassword = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 md:block md:p-0">
+    <div className="relative min-h-screen flex justify-center p-4 md:block md:p-0">
       <div className="w-full max-w-[544px] p-6 bg-white shadow-2xl rounded-xl md:absolute md:top-1/2 md:left-1/2 md:transform md:-translate-x-1/2 md:-translate-y-1/2 md:w-[544px] md:p-4">
         <div className="w-full md:w-[513px] gap-7 bg-white">
           <div className="header flex flex-col gap-2">
@@ -73,13 +71,11 @@ const ForgetPassword = () => {
               {...register("email")}
               className="w-full h-12 px-4 mb-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-
             {errors.email && (
-              <p className="text-red-500 text-xs font-semibold mb-3">
+              <p className="text-red- 500 text-xs font-semibold mb-3">
                 {errors.email.message}
               </p>
             )}
-
             <div className="flex gap-4 mt-6 mb-2">
               <button
                 type="button"

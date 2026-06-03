@@ -11,7 +11,6 @@ import {
 } from "../controllers/task.controller";
 
 const router = Router();
-
 router.use(authenticate);
 
 router.get(
@@ -20,8 +19,8 @@ router.get(
   getProjectDevelopersController
 );
 router.get("/", authorizeRoles("teamLead", "developer"), getTasksController);
-router.post("/", authorizeRoles("teamLead"), createTaskController);
-router.patch("/:id", authorizeRoles("teamLead"), updateTaskController);
+router.post("/", authorizeRoles("teamLead","manager"), createTaskController);
+router.patch("/:id", authorizeRoles("teamLead","manager"), updateTaskController);
 router.patch(
   "/:id/status",
   authorizeRoles("teamLead", "developer"),

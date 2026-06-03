@@ -14,8 +14,12 @@ export const createTaskController = async (
   res: Response
 ) => {
   try {
-    const teamLeadId = req.user!.userId;
-    const task = await createTaskService(teamLeadId, req.body);
+    const userId = req.user!.userId;
+
+    const task = await createTaskService(
+      userId,
+      req.body
+    );
 
     return res.status(201).json({
       success: true,
@@ -23,8 +27,7 @@ export const createTaskController = async (
       task,
     });
   } catch (err: any) {
-    const status = err.message.includes("permission") ? 403 : 400;
-    return res.status(status).json({
+    return res.status(400).json({
       success: false,
       message: err.message,
     });

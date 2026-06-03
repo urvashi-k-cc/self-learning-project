@@ -15,6 +15,7 @@ import TeamsList from "./components/TeamList";
 import TaskList from "./components/TaskList";
 import RoleRoute from "./components/RoleRoute";
 import NotFound from "./components/NotFound";
+import CreateEditTask from "./components/CreateEditTask";
 
 export default function App() {
   return (
@@ -60,11 +61,23 @@ export default function App() {
             <Route
               path="/tasks"
               element={
-                <RoleRoute allowedRoles={["teamLead", "developer"]}>
+                <RoleRoute allowedRoles={["teamLead", "developer" ,"manager"]}>
                   <TaskList />
                 </RoleRoute>
               }
             />
+            <Route path="/tasks/create" element={
+              <RoleRoute allowedRoles={["teamLead", "manager"]}>
+                <CreateEditTask />
+              </RoleRoute>
+            } />
+
+              <Route path="/tasks/edit/:id" element={ 
+              <RoleRoute allowedRoles={["teamLead", "manager"]}>
+                <CreateEditTask />
+              </RoleRoute>
+            } />
+
             <Route
               path="/add-project"
               element={
