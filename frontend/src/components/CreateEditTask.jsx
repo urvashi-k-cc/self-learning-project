@@ -1,8 +1,8 @@
 import {
   createTaskApi,
   updateTaskApi,
+  getTaskByIdApi,
   getProjectDevelopersApi,
-//   getTaskByIdApi,
   getProjectsApi,
 } from "@/helpers/apiRequest";
 
@@ -61,9 +61,9 @@ const CreateEditTask = () => {
       setProjects(projectList);
 
       if (isEdit) {
-        // const taskRes = await getTaskByIdApi(id);
+        const taskRes = await getTaskByIdApi(id);
         const task = taskRes?.task || taskRes?.data?.task || taskRes?.data;
-        
+
         if (task) {
           reset({
             title: task.title || "",
@@ -156,7 +156,6 @@ const CreateEditTask = () => {
                 </option>
               ))}
             </select>
-            {<p>selected  Project : {selectedProjectId}</p>}
             {errors.projectId && (
               <p className="text-red-500 text-sm mt-1">{errors.projectId.message}</p>
             )}
@@ -168,6 +167,7 @@ const CreateEditTask = () => {
           <input
             type="text"
             {...register("title")}
+            placeholder="Enter task title"
             className="w-full border rounded-md px-3 py-2"
           />
           {errors.title && (
@@ -181,6 +181,7 @@ const CreateEditTask = () => {
             rows={4}
             {...register("description")}
             className="w-full border rounded-md px-3 py-2"
+            placeholder="Enter task description"
           />
           {errors.description && (
             <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>

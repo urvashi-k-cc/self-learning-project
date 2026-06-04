@@ -124,7 +124,7 @@ const ProjectsList = () => {
         <TableBody>
           {projects.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center text-gray-500">
+              <TableCell colSpan={8} className="text-center text-gray-500">
                 No projects found
               </TableCell>
             </TableRow>
@@ -184,10 +184,9 @@ const ProjectsList = () => {
           <DialogHeader>
             <DialogTitle>Delete Project?</DialogTitle>
             <DialogDescription>
-              This action will hide the project. It cannot be undone.
+              Are you sure you want to delete this project?         
             </DialogDescription>
           </DialogHeader>
-
           <DialogFooter className="flex gap-2">
             <Button
               variant="outline"

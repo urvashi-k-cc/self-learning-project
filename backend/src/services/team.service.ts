@@ -7,10 +7,8 @@ import {
   validateTeamMembers,
 } from "../utils/team-members";
 import { getActiveProjectOrThrow } from "./access.service";
-
 const teamRepository = AppDataSource.getRepository(Team);
 const userRepository = AppDataSource.getRepository(User);
-
 export const getManagerTeamsService = async (
   managerId: number,
   projectId?: number

@@ -6,7 +6,8 @@ import {
   UserForgotPasswordService,
   UserResetPasswordService,
   UserProfileService,
-  UserGoogleLoginService
+  UserGoogleLoginService,
+  totalUsersService,
 } from "../services/user.service";
 import { AuthRequest } from "../types/express";
 
@@ -170,5 +171,14 @@ export const userGoogleLoginController = async (req: Request, res: Response) => 
     });
   } catch (err: any) {
     res.status(401).json({ message: err.message });
+  }
+};
+
+export const totalUsersController = async (req: AuthRequest, res: Response) => {
+  try {
+    const total = await totalUsersService();
+    return res.status(200).json({ success: true, total });
+  } catch (err: any) {
+    return res.status(400).json({ success: false, message: err.message });
   }
 };

@@ -12,6 +12,7 @@ import { User } from "./user.entity";
 import { Project } from "./project.entity";
 import { TeamMember } from "./team-member.entity";
 
+
 @Entity()
 export class Team {
   @PrimaryGeneratedColumn()

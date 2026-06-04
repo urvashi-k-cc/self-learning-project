@@ -137,6 +137,10 @@ export const UserProfileService = async (userId: number) => {
   return { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email, role: user.role };
 }
 
+export const totalUsersService = async () => {
+  return userRepository.count();
+};
+
 export const UserGoogleLoginService = async (idToken: string) => {
   const ticket = await client.verifyIdToken({
     idToken,

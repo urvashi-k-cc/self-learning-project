@@ -276,3 +276,25 @@ export const updateProjectMembersService = async (
     });
   });
 };
+
+export const totalProjectsService = async () => {
+  return projectRepository.count({
+    where: { deletedAt: IsNull() },
+  });
+}
+
+export const totalProjectsForUserService = async (userId: number, role: UserRole) => {
+  if (role === "manager") {
+    return projectRepository.count({ where: { deletedAt: IsNull() } });
+  }
+  if (role === "teamLead") {
+    return projectRepository
+      .createQueryBuilder("project")
+      .innerJoin("project.teams", "team")
+      .innerJoin("team.members", "leadMember", "leadMember.isTeamLead = true")
+      .where("project.deletedAt IS NULL")
+      .andWhere("leadMember.userId = :userId", { userId })
+      .getCount();
+  }
+  return 0;
+};

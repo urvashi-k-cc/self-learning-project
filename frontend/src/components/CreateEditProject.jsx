@@ -121,6 +121,13 @@ const CreateProject = () => {
         isTeamLead: Number(userId) === teamLeadId,
       }));
 
+      if (teamLeadId && !selectedMembers[teamLeadId]) {
+        members.push({
+          userId: teamLeadId,
+          isTeamLead: true,
+        });
+      }
+
       if (members.length === 0) {
         toast.error("Add at least one team member");
         return;
@@ -188,6 +195,7 @@ const CreateProject = () => {
           <input
             className="w-full h-11 px-4 border rounded-md"
             {...register("name")}
+            placeholder="Enter project name"
           />
           {errors.name && (
             <p className="text-red-500 text-xs">{errors.name.message}</p>
@@ -203,6 +211,7 @@ const CreateProject = () => {
             rows={4}
             className="w-full px-4 py-2 border rounded-md"
             {...register("description")}
+            placeholder="Enter project description"
           />
         </div>
 
@@ -215,6 +224,7 @@ const CreateProject = () => {
             <input
               className="w-full h-11 px-4 border rounded-md"
               {...register("teamName")}
+              placeholder="Enter team name"
             />
           </div>
         )}
@@ -263,19 +273,27 @@ const CreateProject = () => {
             <select
               className="w-full h-11 px-3 border rounded-md"
               value={teamLeadId || ""}
-              onChange={(e) => setTeamLeadId(Number(e.target.value))}
+              onChange={(e) => {
+                const value = e.target.value ? Number(e.target.value) : null;
+                setTeamLeadId(value);
+                if (value && !selectedMembers[value]) {
+                  setSelectedMembers((prev) => ({
+                    ...prev,
+                    [value]: { isTeamLead: false },
+                  }));
+                }
+              }}
             >
               <option value="">Select Team Lead</option>
-
-              {users
-                .filter(    (u) => selectedMembers[u.id] && u.role === "teamLead"
-)
-                .map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name} (
-                    {formatRole(user.role)})
-                  </option>
-                ))}
+              {
+                users.filter((u) => u.role === "teamLead")
+                  .map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.first_name} {user.last_name} (
+                      {formatRole(user.role)})
+                    </option>
+                  ))
+              }
             </select>
           </div>
         )}

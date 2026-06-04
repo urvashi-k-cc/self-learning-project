@@ -38,7 +38,6 @@ export const authenticate = (
         message: "Invalid token payload",
       });
     }
-
     userRepository
       .findOneBy({ id: decoded.userId })
       .then((user) => {

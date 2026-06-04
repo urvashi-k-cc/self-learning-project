@@ -7,6 +7,8 @@ import {
   updateProjectService,
   softDeleteProjectService,
   updateProjectMembersService,
+  totalProjectsService,
+  totalProjectsForUserService,
 } from "../services/project.service";
 export const createProjectController = async (
   req: AuthRequest,
@@ -136,6 +138,23 @@ export const updateProjectMembersController = async (
       project,
     });
   } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+export const totalprojectsController = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    const { userId, role } = req.user!;
+    const total = await totalProjectsForUserService(userId, role);
+    return res.status(200).json({ success: true, total });
+  } catch (err: any) {
+    console.error("ERROR >>>", err);
     return res.status(400).json({
       success: false,
       message: err.message,

@@ -167,6 +167,42 @@ export const getTasksForUserService = async (
   throw new Error("You do not have permission to view tasks");
 };
 
+export const getTaskByIdService = async (
+  taskId: number,
+  userId: number,
+  role: UserRole,
+) => {
+  const task = await taskRepository.findOne({
+    where: { id: taskId },
+    relations: { assignedTo: true, project: true, createdBy: true },
+  });
+
+  if (!task || task.project.deletedAt) {
+    throw new Error("Task not found");
+  }
+
+  if (role === "manager") {
+    return task;
+  }
+
+  if (role === "teamLead") {
+    const isLead = await isUserTeamLeadOnProject(userId, task.projectId);
+    if (!isLead) {
+      throw new Error("You do not have access to this task");
+    }
+    return task;
+  }
+
+  if (role === "developer") {
+    if (task.assignedToId !== userId) {
+      throw new Error("You do not have access to this task");
+    }
+    return task;
+  }
+
+  throw new Error("You do not have permission to view this task");
+};
+
 export const updateTaskService = async (
   taskId: number,
   userId: number,
@@ -266,3 +302,39 @@ export const deleteTaskService = async (
   await assertCanManageTask(userId, role, taskId);
   await taskRepository.delete({ id: taskId });
 };
+
+export const getTaskStatsService = async (
+  userId: number,
+  role: UserRole,
+): Promise<{ todo: number; in_progress: number; review: number; done: number; total: number }> => {
+  let query = taskRepository
+    .createQueryBuilder("task")
+    .innerJoin("task.project", "project")
+    .where("project.deletedAt IS NULL");
+
+  if (role === "teamLead") {
+    query = query
+      .innerJoin("project.teams", "team")
+      .innerJoin("team.members", "leadMember", "leadMember.isTeamLead = true")
+      .andWhere("leadMember.userId = :userId", { userId });
+  } else if (role === "developer") {
+    query = query.andWhere("task.assignedToId = :userId", { userId });
+  }
+  // manager sees all tasks
+
+  const tasks = await query.select("task.status", "status").addSelect("COUNT(*)", "count").groupBy("task.status").getRawMany();
+
+  const stats = { todo: 0, in_progress: 0, review: 0, done: 0, total: 0 };
+  for (const row of tasks) {
+    const s = row.status as keyof Omit<typeof stats, "total">;
+    const count = parseInt(row.count, 10);
+    if (s in stats) {
+      (stats as any)[s] = count;
+    }
+    stats.total += count;
+  }
+
+  return stats;
+};
+
+

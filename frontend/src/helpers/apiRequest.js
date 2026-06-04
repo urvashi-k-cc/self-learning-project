@@ -110,6 +110,11 @@ export const createTaskApi = async (taskData) => {
   return response.data;
 };
 
+export const getTaskByIdApi = async (taskId) => {
+  const response = await api.get(apiUrl.taskById(taskId));
+  return response.data;
+};
+
 export const updateTaskApi = async (taskId, taskData) => {
   const response = await api.patch(apiUrl.taskById(taskId), taskData);
   return response.data;
@@ -141,3 +146,22 @@ export const userGoogleLoginApi = async (tokenId) => {
     throw error;
   }
 }
+
+export const totalProjectsApi = async () => {
+  try {
+    const response = await api.get(apiUrl.totalProjects);
+    return response.data; 
+  } catch (error) {
+    throw error;
+  };
+}
+
+export const totalUsersApi = async () => {
+  const response = await api.get(apiUrl.totalUsers);
+  return response.data;
+};
+
+export const taskStatsApi = async () => {
+  const response = await api.get(apiUrl.taskStats);
+  return response.data;
+};

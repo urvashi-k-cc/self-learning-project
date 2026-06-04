@@ -4,10 +4,12 @@ import { authorizeRoles } from "../middlewares/authorizeRoles";
 import {
   createTaskController,
   getTasksController,
+  getTaskByIdController,
   updateTaskController,
   updateTaskStatusController,
   getProjectDevelopersController,
   deleteTaskController,
+  getTaskStatsController,
 } from "../controllers/task.controller";
 
 const router = Router();
@@ -15,11 +17,29 @@ router.use(authenticate);
 
 router.get(
   "/project/:projectId/developers",
-  authorizeRoles("teamLead"),
+  authorizeRoles("teamLead", "manager"),
   getProjectDevelopersController
 );
-router.get("/", authorizeRoles("teamLead", "developer"), getTasksController);
-router.post("/", authorizeRoles("teamLead","manager"), createTaskController);
+router.get(
+  "/stats",
+  authorizeRoles("manager", "teamLead", "developer"),
+  getTaskStatsController
+);
+router.get(
+  "/",
+  authorizeRoles("teamLead", "developer"),
+  getTasksController
+);
+router.get(
+  "/:id",
+  authorizeRoles("manager", "teamLead", "developer"),
+  getTaskByIdController
+);
+router.post(
+  "/",
+  authorizeRoles("teamLead","manager"),
+  createTaskController
+);
 router.patch("/:id", authorizeRoles("teamLead","manager"), updateTaskController);
 router.patch(
   "/:id/status",
@@ -27,5 +47,6 @@ router.patch(
   updateTaskStatusController
 );
 router.delete("/:id", authorizeRoles("teamLead"), deleteTaskController);
+
 
 export default router;

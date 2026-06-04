@@ -17,6 +17,7 @@ import {
 } from "../helpers/apiRequest";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { FaPlus } from "react-icons/fa";
 const STATUSES = ["todo", "in_progress", "review", "done"];
 
 const TaskList = () => {
@@ -117,10 +118,11 @@ const TaskList = () => {
         </h1>
         {isTeamLead || isManager ? (
           <button
-            className="px-4 py-2 bg-gray-800 text-white rounded-md cursor-pointer"
+            className="flex items-center px-4 py-2 bg-gray-800 text-white rounded-md cursor-pointer"
             onClick={() => navigate("/tasks/create")}
           >
-            Create Task
+            <FaPlus />
+            <span className="ml-2">Add</span>
           </button>
         ) : null}
       </div>
@@ -155,16 +157,12 @@ const TaskList = () => {
             <TableHead> Assigned Team Lead</TableHead>
             <TableHead>Project Manager</TableHead>
             <TableHead>Status</TableHead>
-            {isTeamLead && <TableHead>Actions</TableHead>}
-          </TableRow>
+{(isTeamLead || isDeveloper) && <TableHead>Actions</TableHead>}          </TableRow>
         </TableHeader>
         <TableBody>
           {tasks.length === 0 ? (
             <TableRow>
-              <TableCell
-                colSpan={isTeamLead ? 4 : 3}
-                className="text-center text-gray-500"
-              >
+              <TableCell colSpan={8} className="text-center text-gray-500 py-4">
                 No tasks found
               </TableCell>
             </TableRow>
@@ -201,10 +199,19 @@ const TaskList = () => {
                   </select>
                 </TableCell>
                 <TableCell className="flex items-center">
+                  {isDeveloper || isTeamLead && (
+                    <button
+                      type="button"
+                      className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer text-center"
+                      onClick={() => navigate(`/tasks/${task.id}`)}
+                    >
+                      View 
+                    </button>
+                  )}
                   {isTeamLead && (
                     <button
                       type="button"
-                      className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer"
+                      className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer ms-2"
                       onClick={() => navigate(`/tasks/edit/${task.id}`)}
                     >
                       Edit

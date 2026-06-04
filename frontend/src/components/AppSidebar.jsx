@@ -38,7 +38,7 @@ const allLinks = [
     path: "/tasks",
     label: "Tasks",
     icon: <MdTask className="text-xl" />,
-    roles: ["teamLead", "developer"],
+    roles: ["teamLead", "developer", "manager"],
   },
 ];
 export function AppSidebar() {

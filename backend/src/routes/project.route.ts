@@ -8,6 +8,7 @@ import {
   deleteProjectController,
   updateProjectController,
   updateProjectMembersController,
+  totalprojectsController,
 } from "../controllers/project.controller";
 
 const router = Router();
@@ -16,6 +17,11 @@ router.use(authenticate);
 
 router.post("/", authorizeRoles("manager"), createProjectController);
 router.get("/", authorizeRoles("manager", "teamLead"), getProjectsController);
+router.get(
+  "/total-projects",
+  authorizeRoles("manager", "teamLead"),
+  totalprojectsController
+);
 router.get(
   "/:id",
   authorizeRoles("manager", "teamLead"),
@@ -28,5 +34,6 @@ router.put(
   authorizeRoles("manager"),
   updateProjectMembersController
 );
+
 
 export default router;

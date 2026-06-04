@@ -3,10 +3,12 @@ import { AuthRequest } from "../types/express";
 import {
   createTaskService,
   getTasksForUserService,
+  getTaskByIdService,
   updateTaskService,
   updateTaskStatusService,
   getProjectDevelopersService,
   deleteTaskService,
+  getTaskStatsService,
 } from "../services/task.service";
 
 export const createTaskController = async (
@@ -20,7 +22,6 @@ export const createTaskController = async (
       userId,
       req.body
     );
-
     return res.status(201).json({
       success: true,
       message: "Task assigned successfully",
@@ -46,6 +47,25 @@ export const getTasksController = async (req: AuthRequest, res: Response) => {
     return res.status(200).json({
       success: true,
       tasks,
+    });
+  } catch (err: any) {
+    const status = err.message.includes("permission") ? 403 : 400;
+    return res.status(status).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+export const getTaskByIdController = async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId, role } = req.user!;
+    const taskId = parseInt(String(req.params.id), 10);
+    const task = await getTaskByIdService(taskId, userId, role);
+
+    return res.status(200).json({
+      success: true,
+      task,
     });
   } catch (err: any) {
     const status = err.message.includes("permission") ? 403 : 400;
@@ -154,3 +174,13 @@ export const deleteTaskController = async (req: AuthRequest, res: Response) => {
     });
   } 
 }
+
+export const getTaskStatsController = async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId, role } = req.user!;
+    const stats = await getTaskStatsService(userId, role);
+    return res.status(200).json({ success: true, stats });
+  } catch (err: any) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+};
