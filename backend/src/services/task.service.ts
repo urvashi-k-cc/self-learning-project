@@ -1,6 +1,6 @@
 import { In } from "typeorm";
 import { AppDataSource } from "../config/database";
-import { Task } from "../entities/task.entity";
+import { Task,  } from "../entities/task.entity";
 import { User } from "../entities/user.entity";
 import { TASK_STATUSES, TaskStatus } from "../constants/roles";
 import {
@@ -22,6 +22,7 @@ interface CreateTaskData {
   projectId: number;
   assignedToId: number;
   status?: TaskStatus;
+  priority?: "LOW" | "MEDIUM" | "HIGH";
 }
 
 interface UpdateTaskData {
@@ -29,6 +30,7 @@ interface UpdateTaskData {
   description?: string;
   assignedToId?: number;
   status?: TaskStatus;
+  priority?: "LOW" | "MEDIUM" | "HIGH";
 }
 
 export const createTaskService = async (
@@ -38,11 +40,9 @@ export const createTaskService = async (
   if (!data.title?.trim()) {
     throw new Error("Task title is required");
   }
-
   if (!data.projectId) {
     throw new Error("Project is required");
   }
-
   await getActiveProjectOrThrow(data.projectId);
 
   const user = await userRepository.findOneBy({
@@ -105,6 +105,7 @@ export const createTaskService = async (
     description: data.description?.trim() || null,
     projectId: data.projectId,
     assignedToId: data.assignedToId,
+    priority: (data.priority || "MEDIUM") as TaskPriority,
     createdById: userId,
     status,
   });
@@ -125,18 +126,41 @@ export const getTasksForUserService = async (
   role: UserRole,
   projectId?: number,
 ) => {
+
+  if (role === "manager") {
+    const query = taskRepository
+      .createQueryBuilder("task")
+      .leftJoinAndSelect("task.assignedTo", "assignedTo")
+      .leftJoinAndSelect("task.createdBy", "createdBy")
+      .leftJoinAndSelect("task.project", "project")
+      .leftJoinAndSelect("project.createdBy", "projectCreator")
+      .where("project.deletedAt IS NULL")
+      .orderBy("task.created_at", "DESC");
+
+    if (projectId) {
+      query.andWhere("task.projectId = :projectId", { projectId });
+    }
+
+    return query.getMany();
+  }
+
+
   if (role === "teamLead") {
     const query = taskRepository
       .createQueryBuilder("task")
       .leftJoinAndSelect("task.assignedTo", "assignedTo")
+      .leftJoinAndSelect("task.createdBy", "createdBy")
       .leftJoinAndSelect("task.project", "project")
       .leftJoinAndSelect("project.createdBy", "projectCreator")
       .innerJoin("project.teams", "team")
-      .innerJoin("team.members", "leadMember", "leadMember.isTeamLead = true")
+      .innerJoin(
+        "team.members",
+        "leadMember",
+        "leadMember.isTeamLead = true",
+      )
       .where("leadMember.userId = :userId", { userId })
       .andWhere("project.deletedAt IS NULL")
-      .orderBy("task.created_at", "DESC")
-      .leftJoinAndSelect("task.createdBy", "createdBy");
+      .orderBy("task.created_at", "DESC");
 
     if (projectId) {
       await assertCanViewProject(userId, role, projectId);
@@ -166,6 +190,7 @@ export const getTasksForUserService = async (
 
   throw new Error("You do not have permission to view tasks");
 };
+
 
 export const getTaskByIdService = async (
   taskId: number,
@@ -202,7 +227,6 @@ export const getTaskByIdService = async (
 
   throw new Error("You do not have permission to view this task");
 };
-
 export const updateTaskService = async (
   taskId: number,
   userId: number,
@@ -239,6 +263,9 @@ export const updateTaskService = async (
     //     "Tasks can only be assigned to developers on the project team",
     //   );
     // }
+    if (data.priority !== undefined) {
+  task.priority = data.priority as TaskPriority;
+}
 
     const assignee = await userRepository.findOneBy({
       id: data.assignedToId,
@@ -319,6 +346,7 @@ export const getTaskStatsService = async (
       .andWhere("leadMember.userId = :userId", { userId });
   } else if (role === "developer") {
     query = query.andWhere("task.assignedToId = :userId", { userId });
+    console.log("role>>>>>>>>>>>>>>>>>>>>>", role);
   }
   // manager sees all tasks
 

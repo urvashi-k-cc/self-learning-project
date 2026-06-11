@@ -4,16 +4,22 @@ import { AiOutlineEyeInvisible, AiOutlineEye } from "react-icons/ai";
 import { useForm } from "react-hook-form";
 import { registrationValidation } from "./schema/registrationValidation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { registerUserApi } from "../helpers/apiRequest";
 import { toast } from "sonner";
+import { userGoogleLoginApi, registerUserApi } from "../helpers/apiRequest";
+import { GoogleLogin } from "@react-oauth/google";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const { setUser } = useAuth();
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({ resolver: zodResolver(registrationValidation) });
-  
+
   const onSubmit = async (data) => {
     try {
       console.log("Register button clicked");
@@ -31,10 +37,37 @@ const Register = () => {
       toast.error(msg || "Registration failed");
     }
   };
+
+  //
+  const handleGoogleLoginSuccess = async (credentialResponse) => {
+    try {
+      const tokenId = credentialResponse?.credential;
+      if (!tokenId) {
+        throw new Error("Google credential not received");
+      }
+      const response = await userGoogleLoginApi(tokenId);
+      if (response.success === true) {
+        localStorage.setItem("token", response.accessToken);
+        setUser(response.user);
+        navigate("/dashboard");
+        toast.success(response.message || "Google login successful!");
+      }
+    } catch (error) {
+      const msg =
+        error.response?.data?.message || error.message || "Google login failed";
+      console.error("Google Login error:", error);
+      toast.error(msg);
+    }
+  };
+
+  const handleGoogleLoginError = () => {
+    toast.error("Google sign-in failed. Please try again.");
+  };
+
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 md:block md:p-0">
-      <div className="w-full max-w-[544px] p-6 bg-white shadow-2xl rounded-xl md:absolute md:top-2.5 md:left-1/2 md:transform md:-translate-x-1/2 md:w-[544px] md:h-[565px] md:p-3.5">
-        <div className="w-full md:w-[513px] md:h-[327px] gap-7 bg-white">
+      <div className="w-full max-w-[544px] p-6 bg-white shadow-2xl rounded-xl md:absolute md:top-2.5 md:left-1/2 md:transform md:-translate-x-1/2 md:w-[544px] md:h-[580px] md:p-3.5">
+        <div className="w-full md:w-[513px] md:h-[347px] gap-7 bg-white">
           <div className="header flex flex-col gap-2">
             <h1 className="text-black text-3xl font-extrabold line-clamp-4">
               Sign up
@@ -158,7 +191,16 @@ const Register = () => {
             >
               Sign Up
             </button>
-            <p className="text-center text-gray-600 font-bold text-[13px] mt-4 ">
+            <div className="flex flex-col items-center justify-center p-3">
+              <div className=" gap-4 my-3 items-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleLoginSuccess}
+                  onError={handleGoogleLoginError}
+                  text="continue_with"
+                />
+              </div>
+            </div>
+            <p className="text-center text-gray-600 font-bold text-[13px]">
               Already have an account?{" "}
               <a href="/login" className="text-gray-800 hover:underline">
                 Sign In

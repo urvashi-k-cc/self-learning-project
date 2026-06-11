@@ -1,16 +1,13 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { getUserProfileApi } from "../helpers/apiRequest";
-
 const AuthContext = createContext();
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const loadUser = async () => {
-    try {
+    try { 
       const token = localStorage.getItem("token");
-
       if (!token) {
         setLoading(false);
         return;
@@ -24,7 +21,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     loadUser();
   }, []);

@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AiOutlineDashboard, AiFillProject } from "react-icons/ai";
-import { RiTeamFill } from "react-icons/ri";
 import { MdTask } from "react-icons/md";
 import {
   Sidebar,
@@ -14,7 +13,6 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { useAuth } from "../context/AuthContext";
-
 const allLinks = [
   {
     path: "/dashboard",
@@ -53,7 +51,7 @@ export function AppSidebar() {
       <SidebarHeader className="h- flex items-center justify-start px-6">
         <div className="flex items-center gap-3 p-2">
           <span className="font-bold text-gray-900 dark:text-gray-100 text-lg tracking-tight">
-            My App
+            Task Manager
           </span>
         </div>
       </SidebarHeader>

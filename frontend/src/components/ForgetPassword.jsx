@@ -30,7 +30,6 @@ const ForgetPassword = () => {
       const response = await forgetPasswordApi(data.email);
 
       toast.success(response.message || "Reset link sent successfully");
-
       reset();
     } catch (error) {
       console.log(error);

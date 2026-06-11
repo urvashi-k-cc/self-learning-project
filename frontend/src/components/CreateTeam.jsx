@@ -72,7 +72,6 @@ const CreateTeam = () => {
       toast.error("Add at least one team member");
       return;
     }
-
     if (!members.some((m) => m.isTeamLead)) {
       toast.error("Team must have at least one team lead");
       return;

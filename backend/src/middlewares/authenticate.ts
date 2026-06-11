@@ -5,11 +5,9 @@ import { User } from "../entities/user.entity";
 
 const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 const userRepository = AppDataSource.getRepository(User);
-
 export interface AuthRequest extends Request {
   user?: any;
 }
-
 export const authenticate = (
   req: AuthRequest,
   res: Response,

@@ -23,7 +23,7 @@ export const getActiveProjectOrThrow = async (projectId: number) => {
 
 export const isUserTeamLeadOnProject = async (
   userId: number,
-  projectId: number
+  projectId: number,
 ) => {
   const membership = await teamMemberRepository
     .createQueryBuilder("member")
@@ -50,7 +50,7 @@ export const isUserOnProject = async (userId: number, projectId: number) => {
 export const assertCanViewProject = async (
   userId: number,
   role: UserRole,
-  projectId: number
+  projectId: number,
 ) => {
   await getActiveProjectOrThrow(projectId);
 
@@ -94,7 +94,7 @@ export const getTaskOrThrow = async (taskId: number) => {
 export const assertCanManageTask = async (
   userId: number,
   role: UserRole,
-  taskId: number
+  taskId: number,
 ) => {
   const task = await getTaskOrThrow(taskId);
 
@@ -105,6 +105,9 @@ export const assertCanManageTask = async (
     }
     return task;
   }
+  if (role === "manager") {
+    return task;
+  }
 
   throw new Error("You do not have permission to manage this task");
 };
@@ -112,7 +115,7 @@ export const assertCanManageTask = async (
 export const assertCanUpdateTaskStatus = async (
   userId: number,
   role: UserRole,
-  taskId: number
+  taskId: number,
 ) => {
   const task = await getTaskOrThrow(taskId);
 

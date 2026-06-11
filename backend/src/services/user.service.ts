@@ -9,13 +9,10 @@ import { hashToken, compareToken } from "../utils/token";
 import { OAuth2Client } from "google-auth-library";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-console.log("GOOGLE_CLIENT_ID>>>>>>>>>>>>>>>>>>", process.env.GOOGLE_CLIENT_ID)
-
 const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET!;
-
 const userRepository = AppDataSource.getRepository(User);
 const frontendResetUrl = process.env.FRONTEND_RESET_URL
-console.log("frontendResetUrl", frontendResetUrl)
+console.log("frontendResetUrl>>>>>>>>", frontendResetUrl)
 
 interface CreateUserData {
   first_name: string;

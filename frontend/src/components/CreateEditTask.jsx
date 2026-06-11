@@ -20,7 +20,6 @@ const CreateEditTask = () => {
   const [loading, setLoading] = useState(false);
   const [projects, setProjects] = useState([]);
   const [developers, setDevelopers] = useState([]);
-
   const {
     register,
     handleSubmit,
@@ -35,6 +34,7 @@ const CreateEditTask = () => {
       description: "",
       projectId: "",
       assignedToId: "",
+      priority: "MEDIUM",
     },
   });
 
@@ -56,7 +56,8 @@ const CreateEditTask = () => {
       setLoading(true);
       // Load projects for Team Lead
       const projectsRes = await getProjectsApi();
-      const projectList = projectsRes?.projects || projectsRes?.data?.projects || [];
+      const projectList =
+        projectsRes?.projects || projectsRes?.data?.projects || [];
       console.log("Projects Response:", projectList);
       setProjects(projectList);
 
@@ -69,7 +70,10 @@ const CreateEditTask = () => {
             title: task.title || "",
             description: task.description || "",
             projectId: String(task.projectId || task.project?.id || ""),
-            assignedToId: String(task.assignedToId || task.assignedTo?.id || ""),
+            assignedToId: String(
+              task.assignedToId || task.assignedTo?.id || "",
+            ),
+            priority: task.priority || "MEDIUM",
           });
 
           // Load developers for the task's project
@@ -85,6 +89,7 @@ const CreateEditTask = () => {
     }
   };
 
+
   const loadDevelopers = async (projectId) => {
     try {
       const res = await getProjectDevelopersApi(Number(projectId));
@@ -97,16 +102,16 @@ const CreateEditTask = () => {
 
   const onSubmit = async (formData) => {
     console.log("Form Data Submitted >>>>>>>>>", formData);
-      console.log("selectedProjectId =", selectedProjectId);
-
+    console.log("selectedProjectId =", selectedProjectId);
 
     try {
       setLoading(true);
       const payload = {
         title: formData.title,
         description: formData.description,
-        assignedToId: Number(formData.assignedToId),        
+        assignedToId: Number(formData.assignedToId),
         projectId: Number(formData.projectId),
+        priority: formData.priority,
         // ...(isEdit ? {} : { projectId: Number(formData.projectId) }), // Only send projectId on create
       };
 
@@ -116,14 +121,14 @@ const CreateEditTask = () => {
       } else {
         console.log("Creating task with payload >>>>>>>>>", payload);
         await createTaskApi(payload);
-        
+
         toast.success("Task created successfully");
       }
       navigate("/tasks");
     } catch (error) {
       toast.error(
         error?.response?.data?.message ||
-          `Failed to ${isEdit ? "update" : "create"} task`
+          `Failed to ${isEdit ? "update" : "create"} task`,
       );
     } finally {
       setLoading(false);
@@ -157,7 +162,9 @@ const CreateEditTask = () => {
               ))}
             </select>
             {errors.projectId && (
-              <p className="text-red-500 text-sm mt-1">{errors.projectId.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.projectId.message}
+              </p>
             )}
           </div>
         )}
@@ -184,26 +191,67 @@ const CreateEditTask = () => {
             placeholder="Enter task description"
           />
           {errors.description && (
-            <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {errors.description.message}
+            </p>
           )}
         </div>
 
         <div>
-          <label className="block mb-2 text-sm font-medium">Assign Developer</label>
+          <label className="block mb-2 text-sm font-medium">Priority</label>
+
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2">
+              <input type="radio" value="LOW" {...register("priority")} />
+              Low
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                value="MEDIUM"
+                {...register("priority")}
+              />
+              Medium
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input type="radio" value="HIGH" {...register("priority")} />
+              High
+            </label>
+          </div>
+
+          {errors.priority && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.priority.message}
+            </p>
+          )}
+        </div>
+        <div>
+          <label className="block mb-2 text-sm font-medium">
+            Assign Developer
+          </label>
+
           <select
             {...register("assignedToId")}
             className="w-full border rounded-md px-3 py-2"
             disabled={!selectedProjectId && !isEdit}
           >
-            <option value="">Select Developer</option>
+            {!isEdit && <option value="">Select Developer</option>}
+
             {developers.map((dev) => (
               <option key={dev.id} value={dev.id}>
                 {dev.first_name} {dev.last_name}
               </option>
             ))}
           </select>
+
+          {/* <p>SELECTED ASSIGNED ID: {assignedToId}</p> */}
+
           {errors.assignedToId && (
-            <p className="text-red-500 text-sm mt-1">{errors.assignedToId.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {errors.assignedToId.message}
+            </p>
           )}
         </div>
 

@@ -14,3 +14,9 @@ export const TASK_STATUSES = [
 ] as const;
 
 export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export const TaskPriority = {
+  LOW: "LOW",
+  MEDIUM: "MEDIUM",
+  HIGH: "HIGH",
+} as const;

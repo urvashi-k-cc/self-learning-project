@@ -27,7 +27,7 @@ router.get(
 );
 router.get(
   "/",
-  authorizeRoles("teamLead", "developer"),
+  authorizeRoles("teamLead", "developer", "manager"),
   getTasksController
 );
 router.get(

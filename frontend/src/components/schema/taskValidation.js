@@ -5,4 +5,7 @@ export const taskValidation = z.object({
   description: z.string().min(1, "Description is required"),
   assignedToId: z.string().min(1, "Assignee is required"),
   projectId: z.string().min(1, "Project is required"),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"], {
+    required_error: "Priority is required",
+  }),
 });

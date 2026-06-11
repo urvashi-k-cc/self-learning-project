@@ -18,7 +18,6 @@ import {
   taskStatsApi,
 } from "../helpers/apiRequest";
 
-// ─── Stat Card ───────────────────────────────────────────────────────────────
 const StatCard = ({ label, value, icon, borderColor, loading }) => (
   <div
     className={`bg-white p-5 rounded-lg shadow-sm border-l-4 ${borderColor} flex justify-between items-center`}
@@ -37,7 +36,6 @@ const StatCard = ({ label, value, icon, borderColor, loading }) => (
   </div>
 );
 
-// ─── Task Status Bar ──────────────────────────────────────────────────────────
 const statusMeta = {
   todo:        { label: "To Do",       color: "bg-gray-400",   textColor: "text-gray-600",  icon: <LuCircleDashed /> },
   in_progress: { label: "In Progress", color: "bg-blue-400",   textColor: "text-blue-600",  icon: <LuLoader /> },
@@ -99,7 +97,6 @@ const TaskStatsSection = ({ stats, loading, title }) => {
   );
 };
 
-// ─── Quick Links ──────────────────────────────────────────────────────────────
 const QuickLinks = ({ links }) => (
   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 mt-6">
     <h3 className="text-base font-semibold text-gray-700 mb-3">Quick Links</h3>
@@ -117,14 +114,12 @@ const QuickLinks = ({ links }) => (
   </div>
 );
 
-// ─── Role banners ─────────────────────────────────────────────────────────────
 const roleBanner = {
   manager:  { bg: "bg-orange-50 border-orange-200",  text: "text-orange-700", label: "Manager Dashboard" },
   teamLead: { bg: "bg-blue-50 border-blue-200",      text: "text-blue-700",   label: "Team Lead Dashboard" },
   developer:{ bg: "bg-green-50 border-green-200",    text: "text-green-700",  label: "Developer Dashboard" },
 };
 
-// ─── Manager Dashboard ────────────────────────────────────────────────────────
 const ManagerDashboard = ({ user }) => {
   const [totalProjects, setTotalProjects] = useState(null);
   const [totalUsers, setTotalUsers]       = useState(null);
@@ -252,7 +247,6 @@ const TeamLeadDashboard = ({ user }) => {
   );
 };
 
-// ─── Developer Dashboard ──────────────────────────────────────────────────────
 const DeveloperDashboard = ({ user }) => {
   const [taskStats, setTaskStats] = useState(null);
   const [loading, setLoading]     = useState(true);

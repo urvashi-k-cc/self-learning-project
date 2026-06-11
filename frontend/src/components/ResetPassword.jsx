@@ -30,7 +30,6 @@ const resetPasswordSchema = z
 const ResetPassword = () => {
   const { token } = useParams();
   const navigate = useNavigate();
-
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);

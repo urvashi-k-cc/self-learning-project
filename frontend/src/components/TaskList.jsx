@@ -41,10 +41,12 @@ const TaskList = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        if (isTeamLead) {
+        if (isTeamLead || isManager) {
           const projectsRes = await getProjectsApi();
           setProjects(projectsRes.projects || []);
+
           const pid = initialProjectId || projectsRes.projects?.[0]?.id;
+
           if (pid) {
             setSelectedProjectId(String(pid));
             await loadTasks(String(pid));
@@ -58,9 +60,9 @@ const TaskList = () => {
         setLoading(false);
       }
     };
-    init();
-  }, [isTeamLead, isDeveloper, initialProjectId]);
 
+    init();
+  }, [isTeamLead, isManager, isDeveloper, initialProjectId]);
   const handleProjectChange = async (projectId) => {
     setSelectedProjectId(projectId);
     try {
@@ -127,25 +129,26 @@ const TaskList = () => {
         ) : null}
       </div>
 
-      {isTeamLead && (
-        <div className="mb-4">
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Project
-          </label>
-          <select
-            className="w-full max-w-md h-11 px-4 border border-gray-300 rounded-md"
-            value={selectedProjectId}
-            onChange={(e) => handleProjectChange(e.target.value)}
-          >
-            <option value="">Select a project</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      {isTeamLead ||
+        (isManager && (
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Project
+            </label>
+            <select
+              className="w-full max-w-md h-11 px-4 border border-gray-300 rounded-md"
+              value={selectedProjectId}
+              onChange={(e) => handleProjectChange(e.target.value)}
+            >
+              <option value="">Select a project</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
 
       <Table>
         <TableHeader>
@@ -154,10 +157,13 @@ const TaskList = () => {
             <TableHead>Title</TableHead>
             {isTeamLead && <TableHead>Assignee</TableHead>}
             <TableHead>Project</TableHead>
-            <TableHead> Assigned Team Lead</TableHead>
+            <TableHead>Task Assigned By</TableHead>
             <TableHead>Project Manager</TableHead>
             <TableHead>Status</TableHead>
-{(isTeamLead || isDeveloper) && <TableHead>Actions</TableHead>}          </TableRow>
+            {(isTeamLead || isDeveloper || isManager) && (
+              <TableHead>Actions</TableHead>
+            )}{" "}
+          </TableRow>
         </TableHeader>
         <TableBody>
           {tasks.length === 0 ? (
@@ -199,16 +205,28 @@ const TaskList = () => {
                   </select>
                 </TableCell>
                 <TableCell className="flex items-center">
-                  {isDeveloper || isTeamLead && (
+                     {(isDeveloper || isTeamLead || isManager) && (
                     <button
                       type="button"
-                      className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer text-center"
-                      onClick={() => navigate(`/tasks/${task.id}`)}
+                      className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer ms-2"
+                      onClick={() =>
+                        navigate(`/tasks/${task.id}/chat`, { state: { task } })
+                      }
                     >
-                      View 
+                      {isManager || isTeamLead ? "Reply" : "Chat"}
                     </button>
                   )}
-                  {isTeamLead && (
+                  {(isDeveloper || isTeamLead || isManager) && (
+                    <button
+                      type="button"
+                      className="ms-2 px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer text-center"
+                      onClick={() => navigate(`/tasks/${task.id}`)}
+                    >
+                      View
+                    </button>
+                  )}
+               
+                  {(isTeamLead || isManager) && (
                     <button
                       type="button"
                       className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer ms-2"
@@ -218,7 +236,7 @@ const TaskList = () => {
                     </button>
                   )}
                   <div className="h-1 flex" />
-                  {isTeamLead && (
+                  {(isTeamLead || isManager) && (
                     <button
                       className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer ms-2"
                       onClick={() => handleDelete(task.id)}

@@ -14,6 +14,7 @@ export const tasks = '/api/tasks';
 export const taskById = (id) => `/api/tasks/${id}`;
 export const taskStatus = (id) => `/api/tasks/${id}/status`;
 export const projectDevelopers = (projectId) => `/api/tasks/project/${projectId}/developers`;
+export const getTaskMessages = (taskId) => `/api/chat/task/${taskId}`;
 export const userGoogleLogin = '/api/auth/google-login';
 export const totalProjects = '/api/projects/total-projects';
 export const totalUsers = '/api/auth/total-users';

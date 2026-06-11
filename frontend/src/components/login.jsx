@@ -1,7 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import GoogleSvg from "../assets/svg/GoogleSvg";
-import MicrosoftSvg from "../assets/svg/MicrosoftSvg";
 import { AiOutlineEyeInvisible, AiOutlineEye } from "react-icons/ai";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -29,7 +27,6 @@ const Login = () => {
         throw new Error("Google credential not received");
       }
       const response = await userGoogleLoginApi(tokenId);
-
       if (response.success === true) {
         localStorage.setItem("token", response.accessToken);
         setUser(response.user);
@@ -109,7 +106,7 @@ const Login = () => {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Password"
+                placeholder="Passwkrd"
                 autoComplete="new-password"
                 {...register("password")}
                 className="w-full h-12 px-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -160,10 +157,8 @@ const Login = () => {
               Sign In
             </button>
             {/* Social Login */}
-            <div className="flex flex-col items-center justify-center mt-6 p-3">
-              <span className="text-sm font-medium text-[#A0A0A0]">
-                Login with
-              </span>
+            <div className="flex flex-col items-center justify-center mt-8 p-3">
+
               <div className=" gap-4 my-3 items-center">
               <GoogleLogin
                 onSuccess={handleGoogleLoginSuccess}
@@ -175,7 +170,7 @@ const Login = () => {
             </div>
             </div>
 
-            <p className="text-center text-gray-600 font-bold text-[13px] mt-6">
+            <p className="text-center text-gray-600 font-bold text-[13px] ">
               Don't have an account?{" "}
               <a href="/register" className="text-gray-900 hover:underline">
                 Sign Up

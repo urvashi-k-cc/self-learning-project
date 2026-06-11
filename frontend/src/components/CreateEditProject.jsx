@@ -303,7 +303,7 @@ const CreateProject = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-4 py-2 bg-gray-900 text-white rounded-md"
+            className="px-4 py-2 bg-gray-900 text-white rounded-md cursor-pointer"
           >
             {isSubmitting
               ? "Submitting..."
@@ -315,7 +315,7 @@ const CreateProject = () => {
           <button
             type="button"
             onClick={() => navigate("/projects")}
-            className="px-4 py-2 border rounded-md"
+            className="px-4 py-2 border rounded-md cursor-pointer"
           >
             Cancel
           </button>

@@ -17,6 +17,7 @@ import RoleRoute from "./components/RoleRoute";
 import NotFound from "./components/NotFound";
 import CreateEditTask from "./components/CreateEditTask";
 import ViewTaskDetails from "./components/ViewTask";
+import ChatOption from "./components/ui/chatOption";
 
 
 export default function App() {
@@ -83,6 +84,12 @@ export default function App() {
             <Route path="/tasks/:id" element={
               <RoleRoute allowedRoles={["teamLead", "developer" ,"manager"]}>
                 <ViewTaskDetails />
+              </RoleRoute>
+            } />
+
+            <Route path="/tasks/:id/chat" element={
+              <RoleRoute allowedRoles={["teamLead", "developer" ,"manager"]}>
+                <ChatOption />
               </RoleRoute>
             } />
 

@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { statusLabels,statusStyles,priorityStyles } from "@/utils/common";
 
 const ViewTaskDetails = () => {
   const { id } = useParams();
   const [task, setTask] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
 
   useEffect(() => {
     const loadTask = async () => {
@@ -24,19 +25,7 @@ const ViewTaskDetails = () => {
     loadTask();
   }, [id]);
 
-  const statusLabels = {
-    todo: "To Do",
-    in_progress: "In Progress",
-    review: "Review",
-    done: "Done",
-  };
 
-  const statusColors = {
-    todo: "bg-gray-100 text-gray-700",
-    in_progress: "bg-blue-100 text-blue-700",
-    review: "bg-yellow-100 text-yellow-700",
-    done: "bg-green-100 text-green-700",
-  };
 
   if (loading) {
     return (
@@ -49,6 +38,7 @@ const ViewTaskDetails = () => {
   if (!task) {
     return <div className="text-center mt-10 text-red-500">Task not found</div>;
   }
+  
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -74,10 +64,22 @@ const ViewTaskDetails = () => {
             <h3 className="font-semibold text-gray-700 mb-2">Status</h3>
             <span
               className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                statusColors[task.status]
+                statusStyles[task.status]
               }`}
             >
               {statusLabels[task.status]}
+            </span>
+          </div>
+
+          {/* priority */}
+          <div>
+            <h3 className="font-semibold text-gray-700 mb-2">Priority</h3>
+            <span
+              className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                priorityStyles[task.priority]
+              }`}
+            >
+              {task.priority}
             </span>
           </div>
 

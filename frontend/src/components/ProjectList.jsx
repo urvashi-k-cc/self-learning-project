@@ -6,7 +6,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
 import {
   Dialog,
   DialogContent,
@@ -30,7 +29,7 @@ const getMemberCount = (project) => {
   if (!project.teams?.length) return 0;
   return project.teams.reduce(
     (sum, team) => sum + (team.members?.length || 0),
-    0
+    0,
   );
 };
 
@@ -51,9 +50,7 @@ const ProjectsList = () => {
         const projectsRes = await getProjectsApi();
         setProjects(projectsRes.projects || []);
       } catch (error) {
-        toast.error(
-          error.response?.data?.message || "Failed to load projects"
-        );
+        toast.error(error.response?.data?.message || "Failed to load projects");
       }
     };
     loadProjects();
@@ -65,23 +62,19 @@ const ProjectsList = () => {
     setOpen(true);
   };
 
-  // Confirm delete 
+  // Confirm delete
   const handleDelete = async () => {
     try {
       await deleteProjectApi(deleteId);
 
-      setProjects((prev) =>
-        prev.filter((project) => project.id !== deleteId)
-      );
+      setProjects((prev) => prev.filter((project) => project.id !== deleteId));
 
       toast.success("Project deleted");
 
       setOpen(false);
       setDeleteId(null);
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to delete project"
-      );
+      toast.error(error.response?.data?.message || "Failed to delete project");
     }
   };
 
@@ -162,12 +155,10 @@ const ProjectsList = () => {
                     </>
                   )}
 
-                  {isTeamLead && (
+                  {(isTeamLead || isManager) && (
                     <button
-                      className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer"
-                      onClick={() =>
-                        navigate(`/tasks?projectId=${project.id}`)
-                      }
+                      className="px-3 py-1 text-sm bg-gray-800 text-white rounded-md cursor-pointer ms-2"
+                      onClick={() => navigate(`/tasks?projectId=${project.id}`)}
                     >
                       View Assigned Tasks
                     </button>
@@ -184,14 +175,11 @@ const ProjectsList = () => {
           <DialogHeader>
             <DialogTitle>Delete Project?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this project?         
+              Are you sure you want to delete this project?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
 

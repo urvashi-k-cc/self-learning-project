@@ -72,13 +72,11 @@ export const createTeamApi = async (teamData) => {
   const response = await api.post(apiUrl.teams, teamData);
   return response.data;
 };
-
 export const getTeamsApi = async (projectId) => {
   const params = projectId ? { projectId } : {};
   const response = await api.get(apiUrl.teams, { params });
   return response.data;
 };
-
 export const getAssignableUsersApi = async () => {
   const response = await api.get(apiUrl.assignableUsers);
   return response.data;
@@ -115,6 +113,11 @@ export const getTaskByIdApi = async (taskId) => {
   return response.data;
 };
 
+export const getTaskMessagesApi = async (taskId) => {
+  const response = await api.get(apiUrl.getTaskMessages(taskId));
+  return response.data;
+};
+
 export const updateTaskApi = async (taskId, taskData) => {
   const response = await api.patch(apiUrl.taskById(taskId), taskData);
   return response.data;
@@ -125,7 +128,6 @@ export const updateTaskStatusApi = async (taskId, status) => {
   return response.data;
 };
 
-
 export const getProjectDevelopersApi = async (projectId) => {
   const response = await api.get(apiUrl.projectDevelopers(projectId));
   return response.data; 
@@ -135,6 +137,7 @@ export const deleteTaskApi = async (taskId) => {
   const response = await api.delete(apiUrl.taskById(taskId));
   return response.data;
 }
+
 
 export const userGoogleLoginApi = async (tokenId) => {
   try {

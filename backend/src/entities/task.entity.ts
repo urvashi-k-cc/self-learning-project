@@ -10,7 +10,9 @@ import {
 } from "typeorm";
 import { User } from "./user.entity";
 import { Project } from "./project.entity";
-import { TASK_STATUSES, TaskStatus } from "../constants/roles";
+import { TASK_STATUSES, TaskStatus,TaskPriority } from "../constants/roles";
+
+
 
 @Entity()
 export class Task {
@@ -32,6 +34,13 @@ export class Task {
 
   @Column()
   projectId!: number;
+
+  @Column({
+    type: "enum",
+    enum: TaskPriority,
+    default: TaskPriority.MEDIUM,
+  })
+  priority!: TaskPriority;
 
   @ManyToOne(() => Project)
   @JoinColumn({ name: "projectId" })
