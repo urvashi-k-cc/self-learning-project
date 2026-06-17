@@ -106,7 +106,7 @@ const Login = () => {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Passwkrd"
+                placeholder="Password"
                 autoComplete="new-password"
                 {...register("password")}
                 className="w-full h-12 px-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

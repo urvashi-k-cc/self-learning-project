@@ -17,7 +17,6 @@ const CreateProject = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
-
   const projectFromState = location.state?.project;
   const projectId = params.id || projectFromState?.id;
   const isEdit = Boolean(projectId);
@@ -164,7 +163,6 @@ const CreateProject = () => {
       </div>
     );
   }
-
   return (
     <div className="max-w-5xl mx-auto p-6 rounded-lg shadow border border-gray-200 mt-4">
       {/* HEADER */}

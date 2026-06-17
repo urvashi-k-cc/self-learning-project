@@ -5,7 +5,6 @@ import {
   getAssignableUsersService,
   getProjectTeamForUserService,
 } from "../services/team.service";
-
 export const getTeamsController = async (req: AuthRequest, res: Response) => {
   try {
     const { userId, role } = req.user!;

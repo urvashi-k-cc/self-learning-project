@@ -138,7 +138,6 @@ export const deleteTaskApi = async (taskId) => {
   return response.data;
 }
 
-
 export const userGoogleLoginApi = async (tokenId) => {
   try {
     const response = await api.post(apiUrl.userGoogleLogin, { tokenId });

@@ -55,6 +55,39 @@ const buildParticipants = (task, user) => {
   });
 };
 
+const formatChatMessage = (item, userId) => {
+  const senderName =
+    (item?.sender ? getFullName(item.sender) : item?.senderName) ||
+    "Unknown User";
+  const createdAt = item?.createdAt ? new Date(item.createdAt) : new Date();
+  const senderId = Number(item?.senderId);
+  const currentUserId = Number(userId);
+  const mine = senderId === currentUserId;
+
+  return {
+    id: item?.id?.toString() || item?.clientMessageId,
+    author: senderName,
+    role: mine ? "You" : "",
+    mine,
+    text: item?.message || "",
+    status: mine ? "sent" : undefined,
+    replyTo: item?.replyTo
+      ? {
+          id: item.replyTo.id?.toString(),
+          author:
+            (item.replyTo.sender ? getFullName(item.replyTo.sender) : null) ||
+            item.replyTo.senderName ||
+            "Unknown User",
+          text: item.replyTo.message,
+        }
+      : undefined,
+    time: createdAt.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+};
+
 const ChatOption = () => {
   const { id } = useParams();
   const { state } = useLocation();
@@ -63,8 +96,9 @@ const ChatOption = () => {
   const [task, setTask] = useState(state?.task || null);
   const [loading, setLoading] = useState(Boolean(id && !state?.task));
   const [message, setMessage] = useState("");
-  const [search, setSearch] = useState("");
+  const [search] = useState("");
   const bottomRef = useRef(null);
+  const tempMessageCounterRef = useRef(0);
   const [messages, setMessages] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
 
@@ -72,43 +106,29 @@ const ChatOption = () => {
     user?.role === "manager" || user?.role === "teamLead";
 
   useEffect(() => {
-    console.log("[SOCKET-SETUP] useEffect triggered with id:", id);
-    console.log("[SOCKET-SETUP] Socket connected?", socket.connected);
+    if (!id) return;
 
-    const onConnect = () => {
-      console.log("[SOCKET-SETUP] Connected to backend socket:", socket.id);
-      if (id) {
-        socket.emit("join-task", id);
-        console.log(`[SOCKET-SETUP] Emitted join-task for task-${id}`);
-      }
+    const joinRoom = () => {
+      const roomId = String(id);
+
+      socket.timeout(5000).emit("join-task", roomId, (error, response) => {
+        if (error || response?.success === false) {
+          console.error("Failed to join chat room:", error || response?.error);
+        }
+      });
     };
 
-    const onDisconnect = () => {
-      console.log("[SOCKET-SETUP]  Disconnected from socket");
-    };
-
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-
-    if (socket.disconnected) {
-      console.log(
-        "[SOCKET-SETUP] Socket disconnected, attempting to connect...",
-      );
+    if (socket.connected) {
+      joinRoom();
+    } else {
       socket.connect();
     }
 
-    // If already connected
-    if (socket.connected && id) {
-      console.log(
-        "[SOCKET-SETUP] Socket already connected, joining task-${id}",
-      );
-      socket.emit("join-task", id);
-    }
+    socket.on("connect", joinRoom);
 
     return () => {
-      console.log("[SOCKET-SETUP] Cleaning up socket listeners");
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
+      socket.off("connect", joinRoom);
+      socket.emit("leave-task", id);
     };
   }, [id]);
 
@@ -117,69 +137,32 @@ const ChatOption = () => {
 
     const handleReceiveMessage = (data) => {
       console.log("[MESSAGE-LISTENER] Received Message:", data);
-      const senderName =
-        getFullName(data?.sender) || data?.senderName || "Unknown";
-      const createdAt = data?.createdAt ? new Date(data.createdAt) : new Date();
+
+      if (String(data?.taskId) !== String(id)) return;
 
       setMessages((prev) => {
-        // Check if message already exists (to avoid duplicates)
+        const newMessage = formatChatMessage(data, user?.id);
+
+        if (data?.clientMessageId) {
+          const tempMessageExists = prev.some(
+            (message) => message.id === data.clientMessageId,
+          );
+
+          if (tempMessageExists) {
+            return prev.map((message) =>
+              message.id === data.clientMessageId ? newMessage : message,
+            );
+          }
+        }
+
         const messageExists = prev.some(
-          (msg) =>
-            msg.id === data?.id?.toString() || msg.id === data?.clientMessageId,
+          (message) => message.id === data?.id?.toString(),
         );
 
-        console.log(
-          "[MESSAGE-LISTENER] Checking duplicates - exists:",
-          messageExists,
-          "clientMessageId:",
-          data?.clientMessageId,
-        );
-
-        if (messageExists && !data?.clientMessageId) {
-          console.log("[MESSAGE-LISTENER] Message already exists, skipping");
+        if (messageExists) {
           return prev;
         }
 
-        const newMessage = {
-          id: data?.id?.toString() || Date.now().toString(),
-          author: senderName,
-          role: data?.senderId === user?.id ? "You" : "",
-          mine: data?.senderId === user?.id,
-          text: data?.message || "",
-          time: createdAt.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          status: data?.senderId === user?.id ? "sent" : undefined,
-          replyTo: data?.replyTo
-            ? {
-                id: data.replyTo.id?.toString(),
-                author:
-                  getFullName(data.replyTo.sender) ||
-                  data.replyTo.senderName ||
-                  "Unknown",
-                text: data.replyTo.message,
-              }
-            : undefined,
-        };
-
-        // If this is a message we sent (has clientMessageId), update the temp message
-        if (data?.clientMessageId) {
-          console.log(
-            "[MESSAGE-LISTENER] Updating temp message with id:",
-            data.clientMessageId,
-          );
-          const updated = prev.map((message) =>
-            message.id === data.clientMessageId
-              ? { ...message, ...newMessage, id: data.id?.toString() }
-              : message,
-          );
-          console.log("[MESSAGE-LISTENER]Temp message updated");
-          return updated;
-        }
-
-        // Otherwise add as new message from another user
-        console.log("[MESSAGE-LISTENER] Adding new message from another user");
         return [...prev, newMessage];
       });
     };
@@ -191,99 +174,59 @@ const ChatOption = () => {
       console.log("[MESSAGE-LISTENER] Cleaning up receive-message listener");
       socket.off("receive-message", handleReceiveMessage);
     };
-  }, [id]);
+  }, [id, user?.id]);
 
   useEffect(() => {
+    let active = true;
+
     const loadTaskAndMessages = async () => {
       if (!id) return;
 
       try {
         setLoading(true);
+
         const [taskRes, messagesRes] = await Promise.all([
           getTaskByIdApi(id),
           getTaskMessagesApi(id),
         ]);
 
+        if (!active) return;
+
         setTask(taskRes.task);
-        setMessages(
-          (messagesRes.messages || []).map((item) => ({
-            id: item.id.toString(),
-            author: getFullName(item.sender) || "Unknown",
-            role: item.senderId === user?.id ? "You" : "",
-            mine: item.senderId === user?.id,
-            text: item.message,
-            status: item.senderId === user?.id ? "sent" : undefined,
-            replyTo: item.replyTo
-              ? {
-                  id: item.replyTo.id.toString(),
-                  author: getFullName(item.replyTo.sender) || "Unknown",
-                  text: item.replyTo.message,
-                }
-              : undefined,
-            time: item.createdAt
-              ? new Date(item.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "",
-          })),
-        );
+
+        setMessages((currentMessages) => {
+          const loadedMessages = (messagesRes.messages || []).map((item) =>
+            formatChatMessage(item, user?.id),
+          );
+          const existingIds = new Set(loadedMessages.map((item) => item.id));
+          const liveMessages = currentMessages.filter(
+            (item) => !existingIds.has(item.id),
+          );
+
+          return [...loadedMessages, ...liveMessages];
+        });
       } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to load chat");
+        if (active) {
+          toast.error(error.response?.data?.message || "Failed to load chat");
+        }
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
     loadTaskAndMessages();
 
-    // Set up auto-polling as fallback for messages
-      const pollInterval = setInterval(async () => {
-        if (!id) return;
-        try {
-          const messagesRes = await getTaskMessagesApi(id);
-          setMessages(
-            (messagesRes.messages || []).map((item) => ({
-              id: item.id.toString(),
-              author: getFullName(item.sender) || "Unknown",
-              role: item.senderId === user?.id ? "You" : "",
-              mine: item.senderId === user?.id,
-              text: item.message,
-              status: item.senderId === user?.id ? "sent" : undefined,
-              replyTo: item.replyTo
-                ? {
-                    id: item.replyTo.id.toString(),
-                    author: getFullName(item.replyTo.sender) || "Unknown",
-                    text: item.replyTo.message,
-                  }
-                : undefined,
-              time: item.createdAt
-                ? new Date(item.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "",
-            })),
-          );
-        } catch (error) {
-          console.error("Error polling messages:", error);
-        }
-      }, 2000); // Poll every 2 seconds
-
-    return () => clearInterval(pollInterval);
+    return () => {
+      active = false;
+    };
   }, [id, user?.id]);
 
   const participants = useMemo(
     () => buildParticipants(task, user),
     [task, user],
   );
-
-  useEffect(() => {
-    if (!task) return;
-
-    const ownerName = getFullName(task.createdBy);
-    const assigneeName = getFullName(task.assignedTo);
-  }, [task]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -309,7 +252,8 @@ const ChatOption = () => {
 
     console.log("[SEND-MESSAGE] Sending message:", trimmed);
 
-    const clientMessageId = `temp-${Date.now()}`;
+    tempMessageCounterRef.current += 1;
+    const clientMessageId = `temp-${tempMessageCounterRef.current}`;
     const tempMessage = {
       id: clientMessageId,
       author: getFullName(user),
@@ -332,24 +276,32 @@ const ChatOption = () => {
 
     setMessages((prev) => [...prev, tempMessage]);
 
-    console.log("[SEND-MESSAGE] Emitting send-message socket event:", {
-      taskId: id,
-      senderId: user.id,
-      message: trimmed,
-      replyToId: replyingTo?.id ? Number(replyingTo.id) : null,
-      clientMessageId,
-    });
-
-    socket.emit("send-message", {
+    const payload = {
       taskId: id,
       senderId: user.id,
       senderName: getFullName(user),
       message: trimmed,
       replyToId: replyingTo?.id ? Number(replyingTo.id) : null,
       clientMessageId,
-    });
+    };
 
-    console.log("[SEND-MESSAGE] Event emitted");
+    console.log("[SEND-MESSAGE] Emitting send-message socket event:", payload);
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    socket.timeout(5000).emit("send-message", payload, (error, response) => {
+      if (!error && response?.success !== false) return;
+
+      console.error("Failed to send chat message:", error || response?.error);
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.id === clientMessageId ? { ...item, status: "failed" } : item,
+        ),
+      );
+      toast.error("Message was not sent. Please try again.");
+    });
 
     setMessage("");
     setReplyingTo(null);

@@ -40,7 +40,7 @@ const Navbar = () => {
                   New Project
                 </Link>
                 <Link
-                  to="/teams/create"
+                  to="/teams/create"  
                   className="text-gray-300 hover:text-white"
                 >
                   New Team

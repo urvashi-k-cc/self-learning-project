@@ -3,6 +3,7 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
+
 function Dialog({
   ...props
 }) {
@@ -111,7 +112,7 @@ function DialogFooter({
 function DialogTitle({
   className,
   ...props
-}) {
+}) {  
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"

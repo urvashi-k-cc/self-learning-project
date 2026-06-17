@@ -1,5 +1,5 @@
-import { createChatMessageService } from "../services/chat.service";
 import { Server, Socket } from "socket.io";
+import { createChatMessageService } from "../services/chat.service";
 
 type ChatMessagePayload = {
   taskId: number | string;
@@ -9,82 +9,111 @@ type ChatMessagePayload = {
   clientMessageId?: string;
 };
 
-export const registerChatSocketEvents = (
-  io: Server,
-  socket: Socket
-) => {
-  socket.on("join-task", (taskId: number | string) => {
-    const taskRoomId = Number(taskId);
-    console.log(`join-task received - taskId: ${taskId}, socket: ${socket.id}`);
-    
-    if (!Number.isInteger(taskRoomId)) {
-      console.error(" Invalid taskId for join-task", taskId);
+type SocketAck = (response: { success: boolean; error?: string }) => void;
+
+export const registerChatSocketEvents = (io: Server, socket: Socket) => {
+  console.log("Socket connected:", socket.id);
+
+  // ---------------------------
+  // JOIN TASK ROOM
+  // ---------------------------
+  socket.on("join-task", (taskId, ack?: SocketAck) => {
+    const taskIdNumber = Number(taskId);
+
+    if (!Number.isInteger(taskIdNumber) || taskIdNumber <= 0) {
+      ack?.({ success: false, error: "Invalid task id" });
       return;
     }
-    socket.join(`task-${taskRoomId}`);
-    console.log(`Socket ${socket.id} joined room task-${taskRoomId}`);
-    console.log(`Room members:`, io.sockets.adapter.rooms.get(`task-${taskRoomId}`));
+
+    const room = `task-${taskIdNumber}`;
+
+    socket.join(room);
+
+    console.log(`JOINED: ${socket.id} -> ${room}`);
+    console.log("ROOM SIZE:", io.sockets.adapter.rooms.get(room)?.size);
+    ack?.({ success: true });
   });
 
-  socket.on("send-message", async (data: ChatMessagePayload) => {
+  socket.on("leave-task", (taskId) => {
+    const taskIdNumber = Number(taskId);
+
+    if (!Number.isInteger(taskIdNumber) || taskIdNumber <= 0) return;
+
+    socket.leave(`task-${taskIdNumber}`);
+  });
+  
+  // ---------------------------
+  // SEND MESSAGE
+  // ---------------------------
+  socket.on("send-message", async (data: ChatMessagePayload, ack?: SocketAck) => {
     try {
-      console.log(`send-message received:`, data);
-      
-      const { taskId, senderId, message } = data || {};
-      const taskIdNumber = Number(taskId);
-      const senderIdNumber = Number(senderId);
-      const trimmedMessage = String(message || "").trim();
+      const taskId = Number(data.taskId);
+      const senderId = Number(data.senderId);
+      const message = String(data.message || "").trim();
 
       if (
-        !Number.isInteger(taskIdNumber) ||
-        !Number.isInteger(senderIdNumber) ||
-        !trimmedMessage
+        !Number.isInteger(taskId) ||
+        !Number.isInteger(senderId) ||
+        taskId <= 0 ||
+        senderId <= 0 ||
+        !message
       ) {
-        console.error(" Invalid chat payload", data);
+        ack?.({ success: false, error: "Invalid message payload" });
         return;
       }
 
-      console.log(`Saving message - taskId: ${taskIdNumber}, senderId: ${senderIdNumber}`);
-      
       const savedMessage = await createChatMessageService(
-        taskIdNumber,
-        senderIdNumber,
-        trimmedMessage,
+        taskId,
+        senderId,
+        message,
         data.replyToId ? Number(data.replyToId) : null
       );
 
-      console.log(` Message saved:`, savedMessage);
-
-      if (savedMessage) {
-        const roomName = `task-${taskIdNumber}`;
-        console.log(`Broadcasting to room ${roomName}...`);
-        console.log(`Room members count:`, io.sockets.adapter.rooms.get(roomName)?.size || 0);
-        
-        // Transform saved message for client
-        const messagePayload = {
-          id: savedMessage.id,
-          senderId: savedMessage.senderId,
-          senderName: savedMessage.sender?.first_name ? `${savedMessage.sender.first_name} ${savedMessage.sender.last_name}` : 'Unknown',
-          sender: savedMessage.sender,
-          message: savedMessage.message,
-          taskId: savedMessage.taskId,
-          createdAt: savedMessage.createdAt,
-          replyTo: savedMessage.replyTo ? {
-            id: savedMessage.replyTo.id,
-            message: savedMessage.replyTo.message,
-            sender: savedMessage.replyTo.sender,
-            senderName: savedMessage.replyTo.sender?.first_name ? `${savedMessage.replyTo.sender.first_name} ${savedMessage.replyTo.sender.last_name}` : 'Unknown',
-          } : null,
-          clientMessageId: data.clientMessageId,
-        };
-        
-        // Broadcast to all clients in the room (including sender)
-        io.to(roomName).emit("receive-message", messagePayload);
-        
-        console.log(`Message broadcasted to room ${roomName}`);
+      if (!savedMessage) {
+        console.error("Failed to save chat message");
+        ack?.({ success: false, error: "Failed to save chat message" });
+        return;
       }
-    } catch (error) {
-      console.error("Chat socket error:", error);
+
+      const room = `task-${taskId}`;
+      socket.join(room);
+
+      const payload = {
+        id: savedMessage.id,
+        taskId,
+        senderId,
+        sender: savedMessage.sender,
+        senderName:
+          [savedMessage.sender?.first_name, savedMessage.sender?.last_name]
+            .filter(Boolean)
+            .join(" ") || "Unknown",
+        message: savedMessage.message,
+        createdAt: savedMessage.createdAt,
+        replyTo: savedMessage.replyTo
+          ? {
+              id: savedMessage.replyTo.id,
+              message: savedMessage.replyTo.message,
+              sender: savedMessage.replyTo.sender,
+              senderName:
+                [
+                  savedMessage.replyTo.sender?.first_name,
+                  savedMessage.replyTo.sender?.last_name,
+                ]
+                  .filter(Boolean)
+                  .join(" ") || "Unknown",
+            }
+          : null,
+        clientMessageId: data.clientMessageId,
+      };
+
+      // Broadcast to everyone currently viewing this task chat.
+      io.to(room).emit("receive-message", payload);
+
+      console.log("MESSAGE SENT TO ROOM:", room);
+      ack?.({ success: true });
+    } catch (err) {
+      console.error("Socket error:", err);
+      ack?.({ success: false, error: "Socket error" });
     }
   });
 };

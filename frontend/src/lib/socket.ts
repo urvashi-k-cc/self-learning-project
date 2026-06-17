@@ -9,6 +9,7 @@ const globalSocket = globalThis as typeof globalThis & {
 export const socket =
   globalSocket.__taskChatSocket ??
   io(socketBackendURL, {
+    transports: ["websocket"],
     autoConnect: false,
     reconnection: true,
     reconnectionDelay: 1000,
@@ -17,11 +18,5 @@ export const socket =
   });
 
 globalSocket.__taskChatSocket = socket;
-
-// Auto-connect on module load
-if (!socket.connected && socket.disconnected) {
-  console.log("[SOCKET-INIT] Auto-connecting socket...");
-  socket.connect();
-}
 
 export default socket;
